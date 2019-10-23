@@ -241,7 +241,7 @@ describe('triplelift adapter', function () {
       expect(payload.ext.schain).to.deep.equal(schain);
     });
     it('should not create root level ext when schain is not present', function() {
-      bidRequests[0].schain = null;
+      bidRequests[0].schain = undefined;
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const { data: payload } = request;
       expect(payload.ext).to.deep.equal(undefined);
