@@ -38,11 +38,6 @@ pbjs.setConfig({
             params: {
                 // Replace partner with comma-separated (if more than one) Parrable Partner Client ID(s) for Parrable-aware bid adapters in use
                 partner: "30182847-e426-4ff9-b2b5-9ca1324ea09b"
-            },
-            storage: {
-                type: 'cookie',
-                name: '_parrable_eid',
-                expires: 365
             }
         }, {
             name: 'identityLink',
@@ -64,6 +59,16 @@ pbjs.setConfig({
                 name: '_li_pbid',
                 expires: 60
             }
+        }, {
+             name: 'sharedId',
+              params: {
+                    syncTime: 60 // in seconds, default is 24 hours
+               },
+             storage: {
+                 type: 'cookie',
+                 name: 'sharedid',
+                 expires: 28
+              }
         }],
         syncDelay: 5000,
         auctionDelay: 1000
@@ -113,6 +118,16 @@ pbjs.setConfig({
                  name: '_li_pbid',
                  expires: 60
              }
+        }, {
+             name: 'sharedId',
+            params: {
+                  syncTime: 60 // in seconds, default is 24 hours
+               },
+             storage: {
+                type: 'cookie',
+                name: 'sharedid',
+                expires: 28
+             }
         }],
         syncDelay: 5000
     }
@@ -132,6 +147,10 @@ pbjs.setConfig({
         {
             name: "id5Id",
             value: { "id5id": "ID5-abcdef" }
+        },
+        {
+            name: "netId",
+            value: { "netId": "fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg" }
         }],
         syncDelay: 5000
     }

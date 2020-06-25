@@ -4,11 +4,13 @@
     "pubCommonIdSystem",
     "digiTrustIdSystem",
     "id5IdSystem",
-    "criteortusIdSystem",
     "parrableIdSystem",
     "britepoolIdSystem",
     "liveIntentIdSystem",
-    "criteoIdSystem"
+    "criteoIdSystem",
+    "netIdSystem",
+    "identityLinkIdSystem",
+    "sharedIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
