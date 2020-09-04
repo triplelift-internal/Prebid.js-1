@@ -107,6 +107,8 @@ function _getSyncType(syncOptions) {
 function _buildPostBody(bidRequests) {
   let data = {};
   let { schain } = bidRequests[0];
+  const globalFpd = _getFilteredGlobalFpd();
+
   data.imp = bidRequests.map(function(bidRequest, index) {
     let imp = {
       id: index,
@@ -138,6 +140,16 @@ function _buildPostBody(bidRequests) {
       schain
     }
   }
+
+  if (!utils.isEmpty(globalFpd)) {
+    if (data.ext) {
+      data.ext.fpd = globalFpd;
+    } else {
+      data.ext = {
+        fpd: globalFpd,
+      }
+    }
+  }
   return data;
 }
 
@@ -166,6 +178,29 @@ function _getFloor (bid) {
     }
   }
   return floor !== null ? floor : bid.params.floor;
+}
+
+function _getFilteredGlobalFpd() {
+  let data = {};
+  const tlKeys = ['sens', 'category', 'pmp_elig'] // keys wanted in ext
+  let tlData = {};
+
+  const fpd = config.getConfig('fpd');
+
+  if (!utils.isEmpty(fpd)) {
+    if (fpd.context && fpd.context.data) {
+      data = { ...fpd.context.data };
+    }
+    if (fpd.user && fpd.user.data) {
+      data = { ...data, ...fpd.user.data };
+    }
+    tlKeys.forEach(key => {
+      if (data[key]) {
+        tlData[key] = data[key];
+      }
+    });
+  }
+  return tlData;
 }
 
 function getUnifiedIdEids(bidRequests) {
