@@ -389,21 +389,17 @@ describe('triplelift adapter', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.imp[0].floor).to.equal(1.99);
     });
-    it('should send fpd on root level ext if specified kvps are available', function() {
-      const sens = ['alc', 'pol'];
+    it('should send fpd on root level ext if kvps are available', function() {
+      const sens = null;
       const category = ['news', 'weather', 'hurricane'];
       const pmp_elig = 'true';
       const fpd = {
         context: {
-          data: {
-            pmp_elig,
-            category,
-          }
+          pmp_elig,
+          category,
         },
         user: {
-          data: {
-            sens,
-          }
+          sens,
         }
       }
       sandbox.stub(config, 'getConfig').callsFake(key => {
@@ -414,34 +410,9 @@ describe('triplelift adapter', function () {
       });
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const { data: payload } = request;
-      expect(payload.ext.fpd).to.haveOwnProperty('sens');
+      expect(payload.ext.fpd).to.not.haveOwnProperty('sens');
       expect(payload.ext.fpd).to.haveOwnProperty('category');
       expect(payload.ext.fpd).to.haveOwnProperty('pmp_elig');
-    });
-    it('should not send fpd on root level ext if kvps are not available', function() {
-      const oneKey = 'one';
-      const twoKey = 'two';
-      const fpd = {
-        context: {
-          data: {
-            oneKey,
-          }
-        },
-        user: {
-          data: {
-            twoKey,
-          }
-        }
-      }
-      sandbox.stub(config, 'getConfig').callsFake(key => {
-        const config = {
-          fpd
-        };
-        return utils.deepAccess(config, key);
-      });
-      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      const { data: payload } = request;
-      expect(payload.ext.fpd).to.deep.equal(undefined);
     });
   });
 
