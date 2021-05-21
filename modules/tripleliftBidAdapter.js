@@ -1,304 +1,362 @@
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import * as utils from '../src/utils.js';
-import { config } from '../src/config.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import * as utils from '../src/utils.js'
+import { config } from '../src/config.js'
 
-const GVLID = 28;
-const BIDDER_CODE = 'triplelift';
-const STR_ENDPOINT = 'https://tlx.3lift.com/header/auction?';
-let gdprApplies = true;
-let consentString = null;
+const GVLID = 28
+const BIDDER_CODE = 'triplelift'
+const STR_ENDPOINT = 'https://tlx.3lift.com/header/auction?'
+const STR_ENDPOINT_NATIVE = 'https://tlx.3lift.com/header_native/auction?'
+let gdprApplies = true
+let consentString = null
 
 export const tripleliftAdapterSpec = {
   gvlid: GVLID,
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER, VIDEO],
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   isBidRequestValid: function (bid) {
-    return typeof bid.params.inventoryCode !== 'undefined';
+    if (!bid.mediaTypes.native) {
+      return typeof bid.params.inventoryCode !== 'undefined'
+    }
+
+    return (
+      typeof bid.params.inventoryCode !== 'undefined' &&
+      !bid.nativeParams.image.required &&
+      bid.nativeParams.clickUrl.required &&
+      bid.nativeParams.sponsoredBy.required &&
+      bid.nativeParams.title.required
+    )
   },
 
-  buildRequests: function(bidRequests, bidderRequest) {
-    let tlCall = STR_ENDPOINT;
-    let data = _buildPostBody(bidRequests);
+  buildRequests: function (bidRequests, bidderRequest) {
+    let tlCall = STR_ENDPOINT
+    let tlCallNative = STR_ENDPOINT_NATIVE
+    let data = _buildPostBody(bidRequests)
 
-    tlCall = utils.tryAppendQueryString(tlCall, 'lib', 'prebid');
-    tlCall = utils.tryAppendQueryString(tlCall, 'v', '$prebid.version$');
+    tlCall = utils.tryAppendQueryString(tlCall, 'lib', 'prebid')
+    tlCall = utils.tryAppendQueryString(tlCall, 'v', '$prebid.version$')
 
     if (bidderRequest && bidderRequest.refererInfo) {
-      let referrer = bidderRequest.refererInfo.referer;
-      tlCall = utils.tryAppendQueryString(tlCall, 'referrer', referrer);
+      let referrer = bidderRequest.refererInfo.referer
+      tlCall = utils.tryAppendQueryString(tlCall, 'referrer', referrer)
     }
 
     if (bidderRequest && bidderRequest.timeout) {
-      tlCall = utils.tryAppendQueryString(tlCall, 'tmax', bidderRequest.timeout);
+      tlCall = utils.tryAppendQueryString(tlCall, 'tmax', bidderRequest.timeout)
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {
       if (typeof bidderRequest.gdprConsent.gdprApplies !== 'undefined') {
-        gdprApplies = bidderRequest.gdprConsent.gdprApplies;
-        tlCall = utils.tryAppendQueryString(tlCall, 'gdpr', gdprApplies.toString());
+        gdprApplies = bidderRequest.gdprConsent.gdprApplies
+        tlCall = utils.tryAppendQueryString(tlCall, 'gdpr', gdprApplies.toString())
       }
       if (typeof bidderRequest.gdprConsent.consentString !== 'undefined') {
-        consentString = bidderRequest.gdprConsent.consentString;
-        tlCall = utils.tryAppendQueryString(tlCall, 'cmp_cs', consentString);
+        consentString = bidderRequest.gdprConsent.consentString
+        tlCall = utils.tryAppendQueryString(tlCall, 'cmp_cs', consentString)
       }
     }
 
     if (bidderRequest && bidderRequest.uspConsent) {
-      tlCall = utils.tryAppendQueryString(tlCall, 'us_privacy', bidderRequest.uspConsent);
+      tlCall = utils.tryAppendQueryString(tlCall, 'us_privacy', bidderRequest.uspConsent)
     }
 
     if (config.getConfig('coppa') === true) {
-      tlCall = utils.tryAppendQueryString(tlCall, 'coppa', true);
+      tlCall = utils.tryAppendQueryString(tlCall, 'coppa', true)
     }
 
     if (tlCall.lastIndexOf('&') === tlCall.length - 1) {
-      tlCall = tlCall.substring(0, tlCall.length - 1);
+      tlCall = tlCall.substring(0, tlCall.length - 1)
     }
-    utils.logMessage('tlCall request built: ' + tlCall);
+    utils.logMessage('tlCall request built: ' + tlCall)
 
-    return {
-      method: 'POST',
-      url: tlCall,
-      data,
-      bidderRequest
-    };
+    return [
+      {
+        method: 'POST',
+        url: tlCall,
+        data: data.standard,
+        bidderRequest
+      },
+      {
+        method: 'POST',
+        url: tlCallNative,
+        data: data.native
+      }
+    ]
   },
 
-  interpretResponse: function(serverResponse, {bidderRequest}) {
-    let bids = serverResponse.body.bids || [];
-    return bids.map(function(bid) {
-      return _buildResponseObject(bidderRequest, bid);
-    });
+  interpretResponse: function (serverResponse, { bidderRequest }) {
+    let bids = serverResponse.body.bids || []
+    return bids.map(function (bid) {
+      return _buildResponseObject(bidderRequest, bid)
+    })
   },
 
-  getUserSyncs: function(syncOptions, responses, gdprConsent, usPrivacy) {
-    let syncType = _getSyncType(syncOptions);
-    if (!syncType) return;
+  getUserSyncs: function (syncOptions, responses, gdprConsent, usPrivacy) {
+    let syncType = _getSyncType(syncOptions)
+    if (!syncType) return
 
-    let syncEndpoint = 'https://eb2.3lift.com/sync?';
+    let syncEndpoint = 'https://eb2.3lift.com/sync?'
 
     if (syncType === 'image') {
-      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'px', 1);
-      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'src', 'prebid');
+      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'px', 1)
+      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'src', 'prebid')
     }
 
     if (consentString !== null) {
-      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'gdpr', gdprApplies);
-      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'cmp_cs', consentString);
+      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'gdpr', gdprApplies)
+      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'cmp_cs', consentString)
     }
 
     if (usPrivacy) {
-      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'us_privacy', usPrivacy);
+      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'us_privacy', usPrivacy)
     }
 
-    return [{
-      type: syncType,
-      url: syncEndpoint
-    }];
+    return [
+      {
+        type: syncType,
+        url: syncEndpoint
+      }
+    ]
   }
 }
 
 function _getSyncType(syncOptions) {
-  if (!syncOptions) return;
-  if (syncOptions.iframeEnabled) return 'iframe';
-  if (syncOptions.pixelEnabled) return 'image';
+  if (!syncOptions) return
+  if (syncOptions.iframeEnabled) return 'iframe'
+  if (syncOptions.pixelEnabled) return 'image'
 }
 
 function _buildPostBody(bidRequests) {
-  let data = {};
-  let { schain } = bidRequests[0];
-  const globalFpd = _getGlobalFpd();
+  const standardUnits = bidRequests.filter(bid => !bid.mediaTypes.native)
+  const nativeUnits = bidRequests.filter(bid => bid.mediaTypes.native)
 
-  data.imp = bidRequests.map(function(bidRequest, index) {
+  let standard = {}
+  let native = {}
+  let { schain } = bidRequests[0]
+  let globalFpd = _getGlobalFpd()
+
+  standard.imp = standardUnits.map((bidRequest, index) => {
     let imp = {
       id: index,
       tagid: bidRequest.params.inventoryCode,
       floor: _getFloor(bidRequest)
-    };
+    }
     // remove the else to support multi-imp
     if (_isInstreamBidRequest(bidRequest)) {
-      imp.video = _getORTBVideo(bidRequest);
+      imp.video = _getORTBVideo(bidRequest)
     } else if (bidRequest.mediaTypes.banner) {
-      imp.banner = { format: _sizes(bidRequest.sizes) };
-    };
-    if (!utils.isEmpty(bidRequest.ortb2Imp)) {
-      imp.fpd = _getAdUnitFpd(bidRequest.ortb2Imp);
+      imp.banner = { format: _sizes(bidRequest.sizes) }
     }
-    return imp;
-  });
+    if (!utils.isEmpty(bidRequest.ortb2Imp)) {
+      imp.fpd = _getAdUnitFpd(bidRequest.ortb2Imp)
+    }
+    return imp
+  })
+
+  native.imp = nativeUnits.map((bidRequest, index) => {
+    if (bidRequest.nativeParams.image.sizes) {
+      bidRequest.nativeParams.image.sizes = _sizes(bidRequest.nativeParams.image.sizes)
+    }
+
+    let imp = {
+      id: index,
+      tagid: bidRequest.params.inventoryCode,
+      bidfloor: _getFloor(bidRequest),
+      native: bidRequest.nativeParams,
+      sizes: _sizes(bidRequest.sizes)
+    }
+
+    if (!utils.isEmpty(bidRequest.ortb2Imp)) {
+      imp.fpd = _getAdUnitFpd(bidRequest.ortb2Imp)
+    }
+
+    return imp
+  })
 
   let eids = [
     ...getUnifiedIdEids([bidRequests[0]]),
     ...getIdentityLinkEids([bidRequests[0]]),
     ...getCriteoEids([bidRequests[0]]),
     ...getPubCommonEids([bidRequests[0]])
-  ];
+  ]
 
   if (eids.length > 0) {
-    data.user = {
-      ext: {eids}
-    };
+    standard.user = {
+      ext: { eids }
+    }
+
+    native.user = {
+      ext: { eids }
+    }
   }
 
-  let ext = _getExt(schain, globalFpd);
+  let ext = _getExt(schain, globalFpd)
 
   if (!utils.isEmpty(ext)) {
-    data.ext = ext;
+    standard.ext = ext
+    native.ext = ext
   }
-  return data;
+  return {
+    standard: standard,
+    native: native
+  }
 }
 
 function _isInstreamBidRequest(bidRequest) {
-  if (!bidRequest.mediaTypes.video) return false;
-  if (!bidRequest.mediaTypes.video.context) return false;
+  if (!bidRequest.mediaTypes.video) return false
+  if (!bidRequest.mediaTypes.video.context) return false
   if (bidRequest.mediaTypes.video.context.toLowerCase() === 'instream') {
-    return true;
+    return true
   } else {
-    return false;
+    return false
   }
 }
 
 function _getORTBVideo(bidRequest) {
   // give precedent to mediaTypes.video
-  let video = { ...bidRequest.params.video, ...bidRequest.mediaTypes.video };
-  if (!video.w) video.w = video.playerSize[0][0];
-  if (!video.h) video.h = video.playerSize[0][1];
-  if (video.context === 'instream') video.placement = 1;
+  let video = { ...bidRequest.params.video, ...bidRequest.mediaTypes.video }
+  if (!video.w) video.w = video.playerSize[0][0]
+  if (!video.h) video.h = video.playerSize[0][1]
+  if (video.context === 'instream') video.placement = 1
   // clean up oRTB object
-  delete video.playerSize;
-  return video;
+  delete video.playerSize
+  return video
 }
 
-function _getFloor (bid) {
-  let floor = null;
+function _getFloor(bid) {
+  let floor = null
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({
       currency: 'USD',
       mediaType: _isInstreamBidRequest(bid) ? 'video' : 'banner',
       size: '*'
-    });
-    if (typeof floorInfo === 'object' &&
-    floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
-      floor = parseFloat(floorInfo.floor);
+    })
+    if (
+      typeof floorInfo === 'object' &&
+      floorInfo.currency === 'USD' &&
+      !isNaN(parseFloat(floorInfo.floor))
+    ) {
+      floor = parseFloat(floorInfo.floor)
     }
   }
-  return floor !== null ? floor : bid.params.floor;
+  return floor !== null ? floor : bid.params.floor
 }
 
 function _getGlobalFpd() {
-  const fpd = {};
+  const fpd = {}
   const context = {}
-  const user = {};
-  const ortbData = config.getLegacyFpd(config.getConfig('ortb2')) || {};
+  const user = {}
+  const ortbData = config.getLegacyFpd(config.getConfig('ortb2')) || {}
 
-  const fpdContext = Object.assign({}, ortbData.context);
-  const fpdUser = Object.assign({}, ortbData.user);
+  const fpdContext = Object.assign({}, ortbData.context)
+  const fpdUser = Object.assign({}, ortbData.user)
 
-  _addEntries(context, fpdContext);
-  _addEntries(user, fpdUser);
+  _addEntries(context, fpdContext)
+  _addEntries(user, fpdUser)
 
   if (!utils.isEmpty(context)) {
-    fpd.context = context;
+    fpd.context = context
   }
   if (!utils.isEmpty(user)) {
-    fpd.user = user;
+    fpd.user = user
   }
-  return fpd;
+  return fpd
 }
 
 function _getAdUnitFpd(adUnitFpd) {
-  const fpd = {};
-  const context = {};
+  const fpd = {}
+  const context = {}
 
-  _addEntries(context, adUnitFpd.ext);
+  _addEntries(context, adUnitFpd.ext)
 
   if (!utils.isEmpty(context)) {
-    fpd.context = context;
+    fpd.context = context
   }
 
-  return fpd;
+  return fpd
 }
 
 function _addEntries(target, source) {
   if (!utils.isEmpty(source)) {
     Object.keys(source).forEach(key => {
       if (source[key] != null) {
-        target[key] = source[key];
+        target[key] = source[key]
       }
-    });
+    })
   }
 }
 
 function _getExt(schain, fpd) {
-  let ext = {};
+  let ext = {}
   if (!utils.isEmpty(schain)) {
-    ext.schain = { ...schain };
+    ext.schain = { ...schain }
   }
   if (!utils.isEmpty(fpd)) {
-    ext.fpd = { ...fpd };
+    ext.fpd = { ...fpd }
   }
-  return ext;
+  return ext
 }
 
 function getUnifiedIdEids(bidRequest) {
-  return getEids(bidRequest, 'tdid', 'adserver.org', 'TDID');
+  return getEids(bidRequest, 'tdid', 'adserver.org', 'TDID')
 }
 
 function getIdentityLinkEids(bidRequest) {
-  return getEids(bidRequest, 'idl_env', 'liveramp.com', 'idl');
+  return getEids(bidRequest, 'idl_env', 'liveramp.com', 'idl')
 }
 
 function getCriteoEids(bidRequest) {
-  return getEids(bidRequest, 'criteoId', 'criteo.com', 'criteoId');
+  return getEids(bidRequest, 'criteoId', 'criteo.com', 'criteoId')
 }
 
 function getPubCommonEids(bidRequest) {
-  return getEids(bidRequest, 'pubcid', 'pubcid.org', 'pubcid');
+  return getEids(bidRequest, 'pubcid', 'pubcid.org', 'pubcid')
 }
 
 function getEids(bidRequest, type, source, rtiPartner) {
   return bidRequest
     .map(getUserId(type)) // bids -> userIds of a certain type
-    .filter((x) => !!x) // filter out null userIds
-    .map(formatEid(source, rtiPartner)); // userIds -> eid objects
+    .filter(x => !!x) // filter out null userIds
+    .map(formatEid(source, rtiPartner)) // userIds -> eid objects
 }
 
 function getUserId(type) {
-  return (bid) => (bid && bid.userId && bid.userId[type]);
+  return bid => bid && bid.userId && bid.userId[type]
 }
 
 function formatEid(source, rtiPartner) {
-  return (id) => ({
+  return id => ({
     source,
-    uids: [{
-      id,
-      ext: { rtiPartner }
-    }]
-  });
+    uids: [
+      {
+        id,
+        ext: { rtiPartner }
+      }
+    ]
+  })
 }
 
 function _sizes(sizeArray) {
-  let sizes = sizeArray.filter(_isValidSize);
-  return sizes.map(function(size) {
+  let sizes = sizeArray.filter(_isValidSize)
+  return sizes.map(function (size) {
     return {
       w: size[0],
       h: size[1]
-    };
-  });
+    }
+  })
 }
 
 function _isValidSize(size) {
-  return (size.length === 2 && typeof size[0] === 'number' && typeof size[1] === 'number');
+  return size.length === 2 && typeof size[0] === 'number' && typeof size[1] === 'number'
 }
 
 function _buildResponseObject(bidderRequest, bid) {
-  let bidResponse = {};
-  let width = bid.width || 1;
-  let height = bid.height || 1;
-  let dealId = bid.deal_id || '';
-  let creativeId = bid.crid || '';
-  let breq = bidderRequest.bids[bid.imp_id];
+  let bidResponse = {}
+  let width = bid.width || 1
+  let height = bid.height || 1
+  let dealId = bid.deal_id || ''
+  let creativeId = bid.crid || ''
+  let breq = bidderRequest.bids[bid.imp_id]
 
   if (bid.cpm != 0 && bid.ad) {
     bidResponse = {
@@ -314,30 +372,30 @@ function _buildResponseObject(bidderRequest, bid) {
       ttl: 300,
       tl_source: bid.tl_source,
       meta: {}
-    };
+    }
 
     if (_isInstreamBidRequest(breq)) {
-      bidResponse.vastXml = bid.ad;
-      bidResponse.mediaType = 'video';
-    };
+      bidResponse.vastXml = bid.ad
+      bidResponse.mediaType = 'video'
+    }
 
     if (bid.advertiser_name) {
-      bidResponse.meta.advertiserName = bid.advertiser_name;
+      bidResponse.meta.advertiserName = bid.advertiser_name
     }
 
     if (bid.adomain && bid.adomain.length) {
-      bidResponse.meta.advertiserDomains = bid.adomain;
+      bidResponse.meta.advertiserDomains = bid.adomain
     }
 
     if (bid.tl_source && bid.tl_source == 'hdx') {
-      bidResponse.meta.mediaType = 'banner';
+      bidResponse.meta.mediaType = 'banner'
     }
 
     if (bid.tl_source && bid.tl_source == 'tlx') {
-      bidResponse.meta.mediaType = 'native';
+      bidResponse.meta.mediaType = 'native'
     }
-  };
-  return bidResponse;
+  }
+  return bidResponse
 }
 
-registerBidder(tripleliftAdapterSpec);
+registerBidder(tripleliftAdapterSpec)
