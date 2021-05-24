@@ -29,59 +29,87 @@ export const tripleliftAdapterSpec = {
   },
 
   buildRequests: function (bidRequests, bidderRequest) {
-    let tlCall = STR_ENDPOINT;
-    let tlCallNative = STR_ENDPOINT_NATIVE;
+    let endpoints = {
+      standard: STR_ENDPOINT,
+      native: STR_ENDPOINT_NATIVE
+    };
     let data = _buildPostBody(bidRequests);
 
-    tlCall = utils.tryAppendQueryString(tlCall, 'lib', 'prebid');
-    tlCall = utils.tryAppendQueryString(tlCall, 'v', '$prebid.version$');
+    for (const prop in endpoints) {
+      endpoints[prop] = utils.tryAppendQueryString(endpoints[prop], 'lib', 'prebid');
+      endpoints[prop] = utils.tryAppendQueryString(endpoints[prop], 'v', '$prebid.version$');
 
-    if (bidderRequest && bidderRequest.refererInfo) {
-      let referrer = bidderRequest.refererInfo.referer;
-      tlCall = utils.tryAppendQueryString(tlCall, 'referrer', referrer);
-    }
-
-    if (bidderRequest && bidderRequest.timeout) {
-      tlCall = utils.tryAppendQueryString(tlCall, 'tmax', bidderRequest.timeout);
-    }
-
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      if (typeof bidderRequest.gdprConsent.gdprApplies !== 'undefined') {
-        gdprApplies = bidderRequest.gdprConsent.gdprApplies;
-        tlCall = utils.tryAppendQueryString(tlCall, 'gdpr', gdprApplies.toString());
+      if (bidderRequest && bidderRequest.refererInfo) {
+        let referrer = bidderRequest.refererInfo.referer;
+        endpoints[prop] = utils.tryAppendQueryString(endpoints[prop], 'referrer', referrer);
       }
-      if (typeof bidderRequest.gdprConsent.consentString !== 'undefined') {
-        consentString = bidderRequest.gdprConsent.consentString;
-        tlCall = utils.tryAppendQueryString(tlCall, 'cmp_cs', consentString);
+
+      if (bidderRequest && bidderRequest.timeout) {
+        endpoints[prop] = utils.tryAppendQueryString(
+          endpoints[prop],
+          'tmax',
+          bidderRequest.timeout
+        );
       }
+
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        if (typeof bidderRequest.gdprConsent.gdprApplies !== 'undefined') {
+          gdprApplies = bidderRequest.gdprConsent.gdprApplies;
+          endpoints[prop] = utils.tryAppendQueryString(
+            endpoints[prop],
+            'gdpr',
+            gdprApplies.toString()
+          );
+        }
+        if (typeof bidderRequest.gdprConsent.consentString !== 'undefined') {
+          consentString = bidderRequest.gdprConsent.consentString;
+          endpoints[prop] = utils.tryAppendQueryString(endpoints[prop], 'cmp_cs', consentString);
+        }
+      }
+
+      if (bidderRequest && bidderRequest.uspConsent) {
+        endpoints[prop] = utils.tryAppendQueryString(
+          endpoints[prop],
+          'us_privacy',
+          bidderRequest.uspConsent
+        );
+      }
+
+      if (config.getConfig('coppa') === true) {
+        endpoints[prop] = utils.tryAppendQueryString(endpoints[prop], 'coppa', true);
+      }
+
+      if (endpoints[prop].lastIndexOf('&') === endpoints[prop].length - 1) {
+        endpoints[prop] = endpoints[prop].substring(0, endpoints[prop].length - 1);
+      }
+      utils.logMessage('endpoints[prop] request built: ' + endpoints[prop]);
     }
 
-    if (bidderRequest && bidderRequest.uspConsent) {
-      tlCall = utils.tryAppendQueryString(tlCall, 'us_privacy', bidderRequest.uspConsent);
-    }
+    Object.filter = function (obj) {
+      let result = {};
 
-    if (config.getConfig('coppa') === true) {
-      tlCall = utils.tryAppendQueryString(tlCall, 'coppa', true);
-    }
+      for (const key in obj) {
+        if (!utils.isEmpty(obj[key].imp)) {
+          result[key] = obj[key];
+        }
+      }
 
-    if (tlCall.lastIndexOf('&') === tlCall.length - 1) {
-      tlCall = tlCall.substring(0, tlCall.length - 1);
-    }
-    utils.logMessage('tlCall request built: ' + tlCall);
+      return result;
+    };
 
-    return [
-      {
+    data = Object.filter(data);
+
+    const returnArr = Object.keys(data).map(mediaType => {
+      return {
         method: 'POST',
-        url: tlCall,
-        data: data.standard,
-        bidderRequest
-      },
-      {
-        method: 'POST',
-        url: tlCallNative,
-        data: data.native
-      }
-    ];
+        url: endpoints[mediaType],
+        data: data[mediaType]
+      };
+    });
+
+    console.log('returnArr', returnArr);
+
+    return returnArr;
   },
 
   interpretResponse: function (serverResponse, { bidderRequest }) {
