@@ -33,7 +33,7 @@ export const tripleliftAdapterSpec = {
       standard: STR_ENDPOINT,
       native: STR_ENDPOINT_NATIVE
     };
-    let data = _buildPostBody(bidRequests);
+    let data = _filterData(_buildPostBody(bidRequests));
 
     for (const prop in endpoints) {
       endpoints[prop] = utils.tryAppendQueryString(endpoints[prop], 'lib', 'prebid');
@@ -82,34 +82,16 @@ export const tripleliftAdapterSpec = {
       if (endpoints[prop].lastIndexOf('&') === endpoints[prop].length - 1) {
         endpoints[prop] = endpoints[prop].substring(0, endpoints[prop].length - 1);
       }
-      utils.logMessage('endpoints[prop] request built: ' + endpoints[prop]);
+      utils.logMessage(`${prop} request built: ${endpoints[prop]}`);
     }
 
-    Object.filter = function (obj) {
-      let result = {};
-
-      for (const key in obj) {
-        if (!utils.isEmpty(obj[key].imp)) {
-          result[key] = obj[key];
-        }
-      }
-
-      return result;
-    };
-
-    data = Object.filter(data);
-
-    const returnArr = Object.keys(data).map(mediaType => {
+    return Object.keys(data).map(mediaType => {
       return {
         method: 'POST',
         url: endpoints[mediaType],
         data: data[mediaType]
       };
     });
-
-    console.log('returnArr', returnArr);
-
-    return returnArr;
   },
 
   interpretResponse: function (serverResponse, { bidderRequest }) {
@@ -189,9 +171,10 @@ function _buildPostBody(bidRequests) {
     let imp = {
       id: index,
       tagid: bidRequest.params.inventoryCode,
-      bidfloor: _getFloor(bidRequest),
+      floor: _getFloor(bidRequest),
       native: bidRequest.nativeParams,
-      sizes: _sizes(bidRequest.sizes)
+      // Where should sizes come from?
+      sizes: _sizes([[1, 1]])
     };
 
     if (!utils.isEmpty(bidRequest.ortb2Imp)) {
@@ -230,6 +213,16 @@ function _buildPostBody(bidRequests) {
   };
 }
 
+function _getMediaType(bid) {
+  if (_isInstreamBidRequest(bid)) return 'video';
+  if (_isNativeBidRequest(bid)) return 'native';
+  return 'banner';
+}
+
+function _isNativeBidRequest(bidRequest) {
+  return bidRequest.mediaTypes.native && bidRequest.nativeParams ? true : false;
+}
+
 function _isInstreamBidRequest(bidRequest) {
   if (!bidRequest.mediaTypes.video) return false;
   if (!bidRequest.mediaTypes.video.context) return false;
@@ -256,7 +249,7 @@ function _getFloor(bid) {
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({
       currency: 'USD',
-      mediaType: _isInstreamBidRequest(bid) ? 'video' : 'banner',
+      mediaType: _getMediaType(bid),
       size: '*'
     });
     if (
@@ -424,6 +417,18 @@ function _buildResponseObject(bidderRequest, bid) {
     }
   }
   return bidResponse;
+}
+
+function _filterData(obj) {
+  let result = {};
+
+  for (const key in obj) {
+    if (!utils.isEmpty(obj[key].imp)) {
+      result[key] = obj[key];
+    }
+  }
+
+  return result;
 }
 
 registerBidder(tripleliftAdapterSpec);
