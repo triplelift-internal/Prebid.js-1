@@ -6,7 +6,8 @@ import { config } from '../src/config.js';
 const GVLID = 28;
 const BIDDER_CODE = 'triplelift';
 const STR_ENDPOINT = 'https://tlx.3lift.com/header/auction?';
-const STR_ENDPOINT_NATIVE = 'https://tlx.3lift.com/header_native/auction?';
+// Make sure this is https
+const STR_ENDPOINT_NATIVE = 'http://tlx.3lift.com/header_native/auction?';
 let gdprApplies = true;
 let consentString = null;
 
@@ -89,12 +90,14 @@ export const tripleliftAdapterSpec = {
       return {
         method: 'POST',
         url: endpoints[mediaType],
-        data: data[mediaType]
+        data: data[mediaType],
+        bidderRequest
       };
     });
   },
 
   interpretResponse: function (serverResponse, { bidderRequest }) {
+    console.log('serverResponse', serverResponse, bidderRequest);
     let bids = serverResponse.body.bids || [];
     return bids.map(function (bid) {
       return _buildResponseObject(bidderRequest, bid);
@@ -372,6 +375,52 @@ function _isValidSize(size) {
 }
 
 function _buildResponseObject(bidderRequest, bid) {
+  console.log('bid', bid, bidderRequest);
+
+  if (_isNativeBidRequest(bidderRequest.bids[bid.imp_id])) {
+    console.log('building native response obj');
+    let bidResponse = {};
+    let width = bid.width || 1;
+    let height = bid.height || 1;
+    let dealId = bid.deal_id || '';
+    let creativeId = bid.crid || '';
+    let body = bid.native_ad.body || '';
+    let icon = bid.native_ad.icon || '';
+    let image = bid.native_ad.image || '';
+    let cta = bid.native_ad.cta || '';
+    let adChoices = bid.native_ad.adChoices || '';
+
+    if (bid.native_ad.image.sizes) {
+      bid.native_ad.image.sizes = _sizes(bid.native_ad.image.sizes);
+    }
+    if (bid.cpm != 0 && bid.native_ad) {
+      bidResponse = {
+        requestId: bidderRequest.bids[bid.imp_id].bidId,
+        cpm: bid.cpm,
+        width: width,
+        height: height,
+        native: {
+          image: image,
+          title: bid.native_ad.title,
+          clickUrl: bid.native_ad.clickUrl,
+          sponsoredBy: bid.native_ad.sponsoredBy,
+          impressionTrackers: bid.native_ad.impTrackers,
+          clickTrackers: bid.native_ad.viewTrackers,
+          body: body,
+          icon: icon,
+          cta: cta,
+          adChoices: adChoices
+        },
+        netRevenue: true,
+        dealId: dealId,
+        creativeId: creativeId,
+        currency: 'USD',
+        ttl: 33
+      };
+    }
+    return bidResponse;
+  }
+
   let bidResponse = {};
   let width = bid.width || 1;
   let height = bid.height || 1;
