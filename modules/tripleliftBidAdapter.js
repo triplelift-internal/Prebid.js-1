@@ -6,8 +6,7 @@ import { config } from '../src/config.js';
 const GVLID = 28;
 const BIDDER_CODE = 'triplelift';
 const STR_ENDPOINT = 'https://tlx.3lift.com/header/auction?';
-// Make sure this is https
-const STR_ENDPOINT_NATIVE = 'http://tlx.3lift.com/header_native/auction?';
+const STR_ENDPOINT_NATIVE = 'https://tlx.3lift.com/header_native/auction?';
 let gdprApplies = true;
 let consentString = null;
 
@@ -96,11 +95,10 @@ export const tripleliftAdapterSpec = {
     });
   },
 
-  interpretResponse: function (serverResponse, { bidderRequest }) {
-    console.log('serverResponse', serverResponse, bidderRequest);
+  interpretResponse: function (serverResponse, request) {
     let bids = serverResponse.body.bids || [];
     return bids.map(function (bid) {
-      return _buildResponseObject(bidderRequest, bid);
+      return _buildResponseObject(request, bid);
     });
   },
 
@@ -374,11 +372,11 @@ function _isValidSize(size) {
   return size.length === 2 && typeof size[0] === 'number' && typeof size[1] === 'number';
 }
 
-function _buildResponseObject(bidderRequest, bid) {
-  console.log('bid', bid, bidderRequest);
+function _buildResponseObject(request, bid) {
+  if (bid.native_ad) {
+    // TODO: Does this need to be filtered on each iteration?
+    const nativeBids = request.bidderRequest.bids.filter(bid => bid.mediaTypes.native)
 
-  if (_isNativeBidRequest(bidderRequest.bids[bid.imp_id])) {
-    console.log('building native response obj');
     let bidResponse = {};
     let width = bid.width || 1;
     let height = bid.height || 1;
@@ -395,7 +393,7 @@ function _buildResponseObject(bidderRequest, bid) {
     }
     if (bid.cpm != 0 && bid.native_ad) {
       bidResponse = {
-        requestId: bidderRequest.bids[bid.imp_id].bidId,
+        requestId: nativeBids[bid.imp_id].bidId,
         cpm: bid.cpm,
         width: width,
         height: height,
@@ -421,12 +419,15 @@ function _buildResponseObject(bidderRequest, bid) {
     return bidResponse;
   }
 
+  // TODO: Does this need to be filtered on each iteration?
+  const standardBids = request.bidderRequest.bids.filter(bid => !bid.mediaTypes.native)
+
   let bidResponse = {};
   let width = bid.width || 1;
   let height = bid.height || 1;
   let dealId = bid.deal_id || '';
   let creativeId = bid.crid || '';
-  let breq = bidderRequest.bids[bid.imp_id];
+  let breq = standardBids[bid.imp_id];
 
   if (bid.cpm != 0 && bid.ad) {
     bidResponse = {
