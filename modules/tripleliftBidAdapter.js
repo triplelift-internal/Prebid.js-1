@@ -9,6 +9,9 @@ const STR_ENDPOINT = 'https://tlx.3lift.com/header/auction?';
 const STR_ENDPOINT_NATIVE = 'https://tlx.3lift.com/header_native/auction?';
 let gdprApplies = true;
 let consentString = null;
+// TODO null or []?
+let standardUnits = null;
+let nativeUnits = null;
 
 export const tripleliftAdapterSpec = {
   gvlid: GVLID,
@@ -29,6 +32,7 @@ export const tripleliftAdapterSpec = {
   },
 
   buildRequests: function (bidRequests, bidderRequest) {
+    console.log('bidRequests', bidRequests)
     let endpoints = {
       standard: STR_ENDPOINT,
       native: STR_ENDPOINT_NATIVE
@@ -85,6 +89,7 @@ export const tripleliftAdapterSpec = {
       utils.logMessage(`${prop} request built: ${endpoints[prop]}`);
     }
 
+    // Endpoint is not called if data is not available for it
     return Object.keys(data).map(mediaType => {
       return {
         method: 'POST',
@@ -138,14 +143,15 @@ function _getSyncType(syncOptions) {
 }
 
 function _buildPostBody(bidRequests) {
-  const standardUnits = bidRequests.filter(bid => !bid.mediaTypes.native);
-  const nativeUnits = bidRequests.filter(bid => bid.mediaTypes.native);
+  standardUnits = bidRequests.filter(bid => !bid.mediaTypes.native);
+  nativeUnits = bidRequests.filter(bid => bid.mediaTypes.native);
 
   let standard = {};
   let native = {};
   let { schain } = bidRequests[0];
   let globalFpd = _getGlobalFpd();
 
+  // Returns empty array if no units; which will later be filtered out by _filterData
   standard.imp = standardUnits.map((bidRequest, index) => {
     let imp = {
       id: index,
@@ -164,6 +170,7 @@ function _buildPostBody(bidRequests) {
     return imp;
   });
 
+  // Returns empty array if no units; which will later be filtered out by _filterData
   native.imp = nativeUnits.map((bidRequest, index) => {
     if (bidRequest.nativeParams.image.sizes) {
       bidRequest.nativeParams.image.sizes = _sizes(bidRequest.nativeParams.image.sizes);
@@ -174,7 +181,7 @@ function _buildPostBody(bidRequests) {
       tagid: bidRequest.params.inventoryCode,
       floor: _getFloor(bidRequest),
       native: bidRequest.nativeParams,
-      // Where should sizes come from?
+      // TODO: Where should sizes come from? Can this always be [1, 1]? TLX requies sizes to be located here in request
       sizes: _sizes([[1, 1]])
     };
 
@@ -372,11 +379,9 @@ function _isValidSize(size) {
   return size.length === 2 && typeof size[0] === 'number' && typeof size[1] === 'number';
 }
 
+// TODO: Possibly use ternaries to remove some of the excess here
 function _buildResponseObject(request, bid) {
   if (bid.native_ad) {
-    // TODO: Does this need to be filtered on each iteration?
-    const nativeBids = request.bidderRequest.bids.filter(bid => bid.mediaTypes.native)
-
     let bidResponse = {};
     let width = bid.width || 1;
     let height = bid.height || 1;
@@ -388,12 +393,13 @@ function _buildResponseObject(request, bid) {
     let cta = bid.native_ad.cta || '';
     let adChoices = bid.native_ad.adChoices || '';
 
+    // TODO: What is this and is it necessary?
     if (bid.native_ad.image.sizes) {
       bid.native_ad.image.sizes = _sizes(bid.native_ad.image.sizes);
     }
-    if (bid.cpm != 0 && bid.native_ad) {
+    if (bid.cpm != 0) {
       bidResponse = {
-        requestId: nativeBids[bid.imp_id].bidId,
+        requestId: nativeUnits[bid.imp_id].bidId,
         cpm: bid.cpm,
         width: width,
         height: height,
@@ -419,15 +425,12 @@ function _buildResponseObject(request, bid) {
     return bidResponse;
   }
 
-  // TODO: Does this need to be filtered on each iteration?
-  const standardBids = request.bidderRequest.bids.filter(bid => !bid.mediaTypes.native)
-
   let bidResponse = {};
   let width = bid.width || 1;
   let height = bid.height || 1;
   let dealId = bid.deal_id || '';
   let creativeId = bid.crid || '';
-  let breq = standardBids[bid.imp_id];
+  let breq = standardUnits[bid.imp_id];
 
   if (bid.cpm != 0 && bid.ad) {
     bidResponse = {
