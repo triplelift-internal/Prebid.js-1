@@ -18,21 +18,11 @@ export const tripleliftAdapterSpec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   isBidRequestValid: function (bid) {
-    if (!bid.mediaTypes.native) {
-      return typeof bid.params.inventoryCode !== 'undefined';
-    }
-
-    return (
-      typeof bid.params.inventoryCode !== 'undefined' &&
-      !bid.nativeParams.image.required &&
-      bid.nativeParams.clickUrl.required &&
-      bid.nativeParams.sponsoredBy.required &&
-      bid.nativeParams.title.required
-    );
+    return typeof bid.params.inventoryCode !== 'undefined';
   },
 
   buildRequests: function (bidRequests, bidderRequest) {
-    console.log('bidRequests', bidRequests)
+    console.log('bidRequests', bidRequests);
     let endpoints = {
       standard: STR_ENDPOINT,
       native: STR_ENDPOINT_NATIVE
@@ -172,6 +162,7 @@ function _buildPostBody(bidRequests) {
 
   // Returns empty array if no units; which will later be filtered out by _filterData
   native.imp = nativeUnits.map((bidRequest, index) => {
+    // TODO: this line isnt necessary
     if (bidRequest.nativeParams.image.sizes) {
       bidRequest.nativeParams.image.sizes = _sizes(bidRequest.nativeParams.image.sizes);
     }
@@ -382,6 +373,8 @@ function _isValidSize(size) {
 // TODO: Possibly use ternaries to remove some of the excess here
 function _buildResponseObject(request, bid) {
   if (bid.native_ad) {
+    console.log('nativeUnits - bid', nativeUnits, bid);
+
     let bidResponse = {};
     let width = bid.width || 1;
     let height = bid.height || 1;
@@ -419,12 +412,18 @@ function _buildResponseObject(request, bid) {
         dealId: dealId,
         creativeId: creativeId,
         currency: 'USD',
-        ttl: 33
+        ttl: 33,
+        mediaType: 'native',
+        meta: {
+          mediaType: 'native'
+        }
       };
     }
+    console.log('bidResponse', bidResponse);
     return bidResponse;
   }
 
+  console.log('standardUnits - bid', standardUnits, bid);
   let bidResponse = {};
   let width = bid.width || 1;
   let height = bid.height || 1;
@@ -469,6 +468,7 @@ function _buildResponseObject(request, bid) {
       bidResponse.meta.mediaType = 'native';
     }
   }
+  console.log('bidResponse', bidResponse);
   return bidResponse;
 }
 
