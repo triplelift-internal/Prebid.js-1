@@ -402,7 +402,7 @@ function _buildResponseObject(request, bid) {
           clickUrl: bid.native_ad.clickUrl,
           sponsoredBy: bid.native_ad.sponsoredBy,
           impressionTrackers: bid.native_ad.impTrackers,
-          clickTrackers: bid.native_ad.viewTrackers,
+          clickTrackers: bid.native_ad.clickTrackers,
           body: body,
           icon: icon,
           cta: cta,
