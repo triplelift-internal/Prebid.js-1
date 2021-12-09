@@ -101,7 +101,6 @@ export const tripleliftAdapterSpec = {
   },
 
   getUserSyncs: function (syncOptions, responses, gdprConsent, usPrivacy) {
-    console.log('getUserSyncs', syncOptions)
     let syncType = _getSyncType(syncOptions);
     if (!syncType) return;
 
@@ -137,6 +136,7 @@ function _getSyncType(syncOptions) {
 }
 
 function _buildPostBody(bidRequests) {
+  console.log('buildPostBody, bidRequests', JSON.stringify(bidRequests))
   standardUnits = bidRequests.filter(bid => bid.mediaTypes.banner || bid.mediaTypes.video);
   nativeUnits = bidRequests.filter(bid => bid.mediaTypes.native && !bid.mediaTypes.banner && !bid.mediaTypes.video);
 
@@ -145,8 +145,8 @@ function _buildPostBody(bidRequests) {
   let { schain } = bidRequests[0];
   let globalFpd = _getGlobalFpd();
 
-  console.log('standardUnits', standardUnits)
-  console.log('nativeUnits', nativeUnits)
+  console.log('buildPostBody, standardUnits', JSON.stringify(standardUnits))
+  console.log('buildPostBody, nativeUnits', JSON.stringify(nativeUnits))
 
   // Returns empty array if no units; which will later be filtered out by _filterData
   standard.imp = standardUnits.map((bidRequest, index) => {
@@ -169,11 +169,6 @@ function _buildPostBody(bidRequests) {
 
   // Returns empty array if no units; which will later be filtered out by _filterData
   native.imp = nativeUnits.map((bidRequest, index) => {
-    // TODO: this line isnt necessary
-    if (bidRequest.nativeParams.image.sizes) {
-      bidRequest.nativeParams.image.sizes = _sizes(bidRequest.nativeParams.image.sizes);
-    }
-
     let imp = {
       id: index,
       tagid: bidRequest.params.inventoryCode,

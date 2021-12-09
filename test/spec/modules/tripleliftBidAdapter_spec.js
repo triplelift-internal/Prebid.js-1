@@ -346,6 +346,70 @@ describe('triplelift adapter', function () {
           auctionId: '1d1a030790a475',
           userId: {},
           schain,
+        },
+        {
+          bidder: 'triplelift',
+          params: {
+            inventoryCode: 'native_test',
+            floor: 1.0,
+          },
+          mediaTypes: {
+            native: {
+              sendTargetingKeys: true,
+              image: {
+                required: false
+              },
+              title: {
+                required: false
+              },
+              sponsoredBy: {
+                required: false
+              },
+              clickUrl: {
+                required: false
+              },
+              privacyLink: {
+                required: false
+              },
+              body: {
+                required: false
+              },
+              icon: {
+                required: false
+              }
+            }
+          },
+          nativeParams: {
+            sendTargetingKeys: true,
+            image: {
+              required: false
+            },
+            title: {
+              required: false
+            },
+            sponsoredBy: {
+              required: false
+            },
+            clickUrl: {
+              required: false
+            },
+            privacyLink: {
+              required: false
+            },
+            body: {
+              required: false
+            },
+            icon: {
+              required: false
+            }
+          },
+          adUnitCode: 'adunit-code-native',
+          sizes: [],
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475',
+          userId: {},
+          schain,
         }
       ];
 
@@ -392,6 +456,11 @@ describe('triplelift adapter', function () {
     it('should be able find video object from the instream request', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       expect(request[0].data.imp[1].video).to.exist.and.to.be.a('object');
+    });
+
+    it('should be able find native object from the native request', function () {
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      expect(request[1].data.imp[0].native).to.exist.and.to.be.a('object');
     });
 
     it('should only parse sizes that are of the proper length and format', function () {
@@ -936,7 +1005,6 @@ describe('triplelift adapter', function () {
       ];
 
       let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
-      console.log('should get correct bid response - RESULT', JSON.stringify(result))
       expect(result).to.have.length(2);
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
       expect(Object.keys(result[1])).to.have.members(Object.keys(expectedResponse[1]));
@@ -996,7 +1064,6 @@ describe('triplelift adapter', function () {
         iframeEnabled: true
       };
       let result = tripleliftAdapterSpec.getUserSyncs(syncOptions);
-      console.log('returns iframe user sync pixel when both options are enabled', result)
       expect(result[0].type).to.equal('iframe');
       expect(result[0].url).to.equal(expectedIframeSyncUrl);
     });
