@@ -384,25 +384,25 @@ describe('triplelift adapter', function () {
       sandbox.restore();
     });
 
-    it('exists and is an object', function () {
+    it('exists and is an array', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      expect(request).to.exist.and.to.be.a('object');
+      expect(request).to.exist.and.to.be.a('array');
     });
 
     it('should be able find video object from the instream request', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.imp[1].video).to.exist.and.to.be.a('object');
+      expect(request[0].data.imp[1].video).to.exist.and.to.be.a('object');
     });
 
     it('should only parse sizes that are of the proper length and format', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.imp[0].banner.format).to.have.length(2);
-      expect(request.data.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
+      expect(request[0].data.imp[0].banner.format).to.have.length(2);
+      expect(request[0].data.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
     });
 
     it('should be a post request and populate the payload', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      const payload = request.data;
+      const payload = request[0].data;
       expect(payload).to.exist;
       expect(payload.imp[0].tagid).to.equal('12345');
       expect(payload.imp[0].floor).to.equal(1.0);
@@ -436,7 +436,7 @@ describe('triplelift adapter', function () {
       const id = '6bca7f6b-a98a-46c0-be05-6020f7604598';
       bidRequests[0].userId.tdid = id;
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      const payload = request.data;
+      const payload = request[0].data;
       expect(payload).to.exist;
       expect(payload.user).to.deep.equal({ext: {eids: [{source: 'adserver.org', uids: [{id, ext: {rtiPartner: 'TDID'}}]}]}});
     });
@@ -445,7 +445,7 @@ describe('triplelift adapter', function () {
       const id = 'XY6104gr0njcH9UDIR7ysFFJcm2XNpqeJTYslleJ_cMlsFOfZI';
       bidRequests[0].userId.idl_env = id;
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      const payload = request.data;
+      const payload = request[0].data;
       expect(payload).to.exist;
       expect(payload.user).to.deep.equal({ext: {eids: [{source: 'liveramp.com', uids: [{id, ext: {rtiPartner: 'idl'}}]}]}});
     });
@@ -454,7 +454,7 @@ describe('triplelift adapter', function () {
       const id = '53e30ea700424f7bbdd793b02abc5d7';
       bidRequests[0].userId.criteoId = id;
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      const payload = request.data;
+      const payload = request[0].data;
       expect(payload).to.exist;
       expect(payload.user).to.deep.equal({ext: {eids: [{source: 'criteo.com', uids: [{id, ext: {rtiPartner: 'criteoId'}}]}]}});
     });
@@ -468,7 +468,7 @@ describe('triplelift adapter', function () {
       bidRequests[0].userId.criteoId = criteoId;
 
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      const payload = request.data;
+      const payload = request[0].data;
 
       expect(payload).to.exist;
       expect(payload.user).to.deep.equal({
@@ -519,7 +519,7 @@ describe('triplelift adapter', function () {
       ];
 
       const request = tripleliftAdapterSpec.buildRequests(bidRequestsMultiple, bidderRequest);
-      const payload = request.data;
+      const payload = request[0].data;
 
       expect(payload.user).to.deep.equal({
         ext: {
@@ -581,7 +581,7 @@ describe('triplelift adapter', function () {
       ];
 
       let request = tripleliftAdapterSpec.buildRequests(bidRequestsMultiple, bidderRequest);
-      let payload = request.data;
+      let payload = request[0].data;
 
       expect(payload.user).to.deep.equal({
         ext: {
@@ -623,7 +623,7 @@ describe('triplelift adapter', function () {
       ];
 
       request = tripleliftAdapterSpec.buildRequests(bidRequestsMultiple, bidderRequest);
-      payload = request.data;
+      payload = request[0].data;
 
       expect(payload.user).to.deep.equal({
         ext: {
@@ -665,7 +665,7 @@ describe('triplelift adapter', function () {
       ];
 
       request = tripleliftAdapterSpec.buildRequests(bidRequestsMultiple, bidderRequest);
-      payload = request.data;
+      payload = request[0].data;
 
       expect(payload.user).to.deep.equal({
         ext: {
@@ -698,7 +698,7 @@ describe('triplelift adapter', function () {
 
     it('should return a query string for TL call', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      const url = request.url;
+      const url = request[0].url;
       expect(url).to.exist;
       expect(url).to.be.a('string');
       expect(url).to.match(/(?:tlx.3lift.com\/header\/auction)/)
@@ -709,32 +709,32 @@ describe('triplelift adapter', function () {
     it('should return us_privacy param when CCPA info is available', function() {
       bidderRequest.uspConsent = '1YYY';
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      const url = request.url;
+      const url = request[0].url;
       expect(url).to.match(/(\?|&)us_privacy=1YYY/);
     });
     it('should return coppa param when COPPA config is set to true', function() {
       sinon.stub(config, 'getConfig').withArgs('coppa').returns(true);
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       config.getConfig.restore();
-      const url = request.url;
+      const url = request[0].url;
       expect(url).to.match(/(\?|&)coppa=true/);
     });
     it('should not return coppa param when COPPA config is set to false', function() {
       sinon.stub(config, 'getConfig').withArgs('coppa').returns(false);
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       config.getConfig.restore();
-      const url = request.url;
+      const url = request[0].url;
       expect(url).not.to.match(/(\?|&)coppa=/);
     });
     it('should return schain when present', function() {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      const { data: payload } = request;
+      const { data: payload } = request[0];
       expect(payload.ext.schain).to.deep.equal(schain);
     });
     it('should not create root level ext when schain is not present', function() {
       bidRequests[0].schain = undefined;
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      const { data: payload } = request;
+      const { data: payload } = request[0];
       expect(payload.ext).to.deep.equal(undefined);
     });
     it('should get floor from floors module if available', function() {
@@ -744,12 +744,12 @@ describe('triplelift adapter', function () {
       // standard float response; expected functionality of floors module
       floorInfo = { currency: 'USD', floor: 1.99 };
       let request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.imp[0].floor).to.equal(1.99);
+      expect(request[0].data.imp[0].floor).to.equal(1.99);
 
       // if string response, convert to float
       floorInfo = { currency: 'USD', floor: '1.99' };
       request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.imp[0].floor).to.equal(1.99);
+      expect(request[0].data.imp[0].floor).to.equal(1.99);
     });
     it('should call getFloor with the correct parameters based on mediaType', function() {
       bidRequests.forEach(request => {
@@ -787,6 +787,7 @@ describe('triplelift adapter', function () {
         size: '*'
       })).to.be.true;
     });
+
     it('should send global config fpd if kvps are available', function() {
       const sens = null;
       const category = ['news', 'weather', 'hurricane'];
@@ -811,17 +812,17 @@ describe('triplelift adapter', function () {
         return utils.deepAccess(config, key);
       });
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      const { data: payload } = request;
+      const { data: payload } = request[0];
       expect(payload.ext.fpd.user).to.not.exist;
       expect(payload.ext.fpd.context.data).to.haveOwnProperty('category');
       expect(payload.ext.fpd.context).to.haveOwnProperty('pmp_elig');
     });
     it('should send ad unit fpd if kvps are available', function() {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.imp[0].fpd.context).to.haveOwnProperty('data');
-      expect(request.data.imp[0].fpd.context.data).to.haveOwnProperty('pbAdSlot');
-      expect(request.data.imp[0].fpd.context.data).to.haveOwnProperty('adUnitSpecificAttribute');
-      expect(request.data.imp[1].fpd).to.not.exist;
+      expect(request[0].data.imp[0].fpd.context).to.haveOwnProperty('data');
+      expect(request[0].data.imp[0].fpd.context.data).to.haveOwnProperty('pbAdSlot');
+      expect(request[0].data.imp[0].fpd.context.data).to.haveOwnProperty('adUnitSpecificAttribute');
+      expect(request[0].data.imp[1].fpd).to.not.exist;
     });
   });
 
@@ -933,7 +934,9 @@ describe('triplelift adapter', function () {
           meta: {}
         }
       ];
+
       let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
+      console.log('should get correct bid response - RESULT', JSON.stringify(result))
       expect(result).to.have.length(2);
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
       expect(Object.keys(result[1])).to.have.members(Object.keys(expectedResponse[1]));
@@ -993,6 +996,7 @@ describe('triplelift adapter', function () {
         iframeEnabled: true
       };
       let result = tripleliftAdapterSpec.getUserSyncs(syncOptions);
+      console.log('returns iframe user sync pixel when both options are enabled', result)
       expect(result[0].type).to.equal('iframe');
       expect(result[0].url).to.equal(expectedIframeSyncUrl);
     });
