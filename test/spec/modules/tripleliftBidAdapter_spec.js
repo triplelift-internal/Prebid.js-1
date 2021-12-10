@@ -469,6 +469,12 @@ describe('triplelift adapter', function () {
       expect(request[0].data.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
     });
 
+    it('should be able to find and parse required native 1x1 size', function () {
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      expect(request[1].data.imp[0].sizes).to.have.length(1);
+      expect(request[1].data.imp[0].sizes).to.deep.equal([{ w: 1, h: 1 }]);
+    });
+
     it('should be a post request and populate the payload', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const payload = request[0].data;
