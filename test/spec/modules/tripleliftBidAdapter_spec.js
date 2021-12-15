@@ -411,9 +411,9 @@ describe('triplelift adapter', function () {
       expect(payload.imp[1].floor).to.equal(1.0);
       expect(payload.imp[1].video).to.exist.and.to.be.a('object');
       // banner and outstream video
-      expect(payload.imp[2]).to.not.have.property('video');
-      expect(payload.imp[2]).to.have.property('banner');
-      expect(payload.imp[2].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
+      expect(payload.imp[2]).to.have.property('video');
+      expect(payload.imp[2]).to.not.have.property('banner');
+      expect(payload.imp[2].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'w': 640, 'h': 480, 'context': 'outstream', 'placement': 3});
       // banner and incomplete video
       expect(payload.imp[3]).to.not.have.property('video');
       expect(payload.imp[3]).to.have.property('banner');
@@ -427,9 +427,9 @@ describe('triplelift adapter', function () {
       expect(payload.imp[5]).to.have.property('video');
       expect(payload.imp[5].video).to.exist.and.to.be.a('object');
       // banner and outream video and native
-      expect(payload.imp[6]).to.not.have.property('video');
-      expect(payload.imp[6]).to.have.property('banner');
-      expect(payload.imp[6].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
+      expect(payload.imp[6]).to.have.property('video');
+      expect(payload.imp[6]).to.not.have.property('banner');
+      expect(payload.imp[6].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'w': 640, 'h': 480, 'context': 'outstream', 'placement': 3});
     });
 
     it('should add tdid to the payload if included', function () {

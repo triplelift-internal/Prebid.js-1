@@ -7,7 +7,7 @@ const GVLID = 28;
 const BIDDER_CODE = 'triplelift';
 const STR_ENDPOINT = 'https://tlx.3lift.com/header/auction?';
 const BANNER_TIME_TO_LIVE = 300;
-const INSTREAM_TIME_TO_LIVE = 3600;
+const VIDEO_TIME_TO_LIVE = 3600;
 let gdprApplies = true;
 let consentString = null;
 
@@ -119,7 +119,7 @@ function _buildPostBody(bidRequests) {
       floor: _getFloor(bidRequest)
     };
     // remove the else to support multi-imp
-    if (_isInstreamBidRequest(bidRequest)) {
+    if (_isVideoBidRequest(bidRequest)) {
       imp.video = _getORTBVideo(bidRequest);
     } else if (bidRequest.mediaTypes.banner) {
       imp.banner = { format: _sizes(bidRequest.sizes) };
@@ -151,10 +151,13 @@ function _buildPostBody(bidRequests) {
   return data;
 }
 
-function _isInstreamBidRequest(bidRequest) {
+function _isVideoBidRequest(bidRequest) {
   if (!bidRequest.mediaTypes.video) return false;
   if (!bidRequest.mediaTypes.video.context) return false;
-  if (bidRequest.mediaTypes.video.context.toLowerCase() === 'instream') {
+  if (
+    bidRequest.mediaTypes.video.context.toLowerCase() === 'instream' ||
+    bidRequest.mediaTypes.video.context.toLowerCase() === 'outstream'
+  ) {
     return true;
   } else {
     return false;
@@ -167,6 +170,7 @@ function _getORTBVideo(bidRequest) {
   if (!video.w) video.w = video.playerSize[0][0];
   if (!video.h) video.h = video.playerSize[0][1];
   if (video.context === 'instream') video.placement = 1;
+  if (video.context === 'outstream') video.placement = 3;
   // clean up oRTB object
   delete video.playerSize;
   return video;
@@ -177,7 +181,7 @@ function _getFloor (bid) {
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({
       currency: 'USD',
-      mediaType: _isInstreamBidRequest(bid) ? 'video' : 'banner',
+      mediaType: _isVideoBidRequest(bid) ? 'video' : 'banner',
       size: '*'
     });
     if (typeof floorInfo === 'object' &&
@@ -335,10 +339,10 @@ function _buildResponseObject(bidderRequest, bid) {
       meta: {}
     };
 
-    if (_isInstreamBidRequest(breq)) {
+    if (_isVideoBidRequest(breq)) {
       bidResponse.vastXml = bid.ad;
       bidResponse.mediaType = 'video';
-      bidResponse.ttl = INSTREAM_TIME_TO_LIVE;
+      bidResponse.ttl = VIDEO_TIME_TO_LIVE;
     };
 
     if (bid.advertiser_name) {
