@@ -1,7 +1,6 @@
 import { tryAppendQueryString, logMessage, isEmpty, isStr, isPlainObject, isArray, logWarn } from '../src/utils.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 
 const GVLID = 28;
@@ -25,7 +24,6 @@ export const tripleliftAdapterSpec = {
   },
 
   buildRequests: function (bidRequests, bidderRequest) {
-    console.log('bidRequests', bidRequests, bidderRequest);
     let endpoints = {
       standard: STR_ENDPOINT,
       native: STR_ENDPOINT_NATIVE
@@ -136,7 +134,6 @@ function _getSyncType(syncOptions) {
 }
 
 function _buildPostBody(bidRequests) {
-  console.log('buildPostBody, bidRequests', JSON.stringify(bidRequests))
   standardUnits = bidRequests.filter(bid => bid.mediaTypes.banner || bid.mediaTypes.video);
   nativeUnits = bidRequests.filter(bid => bid.mediaTypes.native && !bid.mediaTypes.banner && !bid.mediaTypes.video);
 
@@ -144,9 +141,6 @@ function _buildPostBody(bidRequests) {
   let native = {};
   let { schain } = bidRequests[0];
   let globalFpd = _getGlobalFpd();
-
-  console.log('buildPostBody, standardUnits', JSON.stringify(standardUnits))
-  console.log('buildPostBody, nativeUnits', JSON.stringify(nativeUnits))
 
   // Returns empty array if no units; which will later be filtered out by _filterData
   standard.imp = standardUnits.map((bidRequest, index) => {
@@ -161,7 +155,7 @@ function _buildPostBody(bidRequests) {
     } else if (bidRequest.mediaTypes.banner) {
       imp.banner = { format: _sizes(bidRequest.sizes) };
     }
-    if (!utils.isEmpty(bidRequest.ortb2Imp)) {
+    if (!isEmpty(bidRequest.ortb2Imp)) {
       imp.fpd = _getAdUnitFpd(bidRequest.ortb2Imp);
     }
     return imp;
@@ -178,7 +172,7 @@ function _buildPostBody(bidRequests) {
       sizes: _sizes([[1, 1]])
     };
 
-    if (!utils.isEmpty(bidRequest.ortb2Imp)) {
+    if (!isEmpty(bidRequest.ortb2Imp)) {
       imp.fpd = _getAdUnitFpd(bidRequest.ortb2Imp);
     }
 
@@ -204,7 +198,7 @@ function _buildPostBody(bidRequests) {
 
   let ext = _getExt(schain, globalFpd);
 
-  if (!utils.isEmpty(ext)) {
+  if (!isEmpty(ext)) {
     standard.ext = ext;
     native.ext = ext;
   }
@@ -276,10 +270,10 @@ function _getGlobalFpd() {
   _addEntries(context, fpdContext);
   _addEntries(user, fpdUser);
 
-  if (!utils.isEmpty(context)) {
+  if (!isEmpty(context)) {
     fpd.context = context;
   }
-  if (!utils.isEmpty(user)) {
+  if (!isEmpty(user)) {
     fpd.user = user;
   }
   return fpd;
@@ -291,7 +285,7 @@ function _getAdUnitFpd(adUnitFpd) {
 
   _addEntries(context, adUnitFpd.ext);
 
-  if (!utils.isEmpty(context)) {
+  if (!isEmpty(context)) {
     fpd.context = context;
   }
 
@@ -299,7 +293,7 @@ function _getAdUnitFpd(adUnitFpd) {
 }
 
 function _addEntries(target, source) {
-  if (!utils.isEmpty(source)) {
+  if (!isEmpty(source)) {
     Object.keys(source).forEach(key => {
       if (source[key] != null) {
         target[key] = source[key];
@@ -310,10 +304,10 @@ function _addEntries(target, source) {
 
 function _getExt(schain, fpd) {
   let ext = {};
-  if (!utils.isEmpty(schain)) {
+  if (!isEmpty(schain)) {
     ext.schain = { ...schain };
   }
-  if (!utils.isEmpty(fpd)) {
+  if (!isEmpty(fpd)) {
     ext.fpd = { ...fpd };
   }
   return ext;
@@ -392,8 +386,6 @@ function _isValidSize(size) {
 // TODO: Possibly use ternaries to remove some of the excess here
 function _buildResponseObject(request, bid) {
   if (bid.native_ad) {
-    console.log('nativeUnits - bid', nativeUnits, bid);
-
     let bidResponse = {};
     let width = bid.width || 1;
     let height = bid.height || 1;
@@ -438,11 +430,9 @@ function _buildResponseObject(request, bid) {
         }
       };
     }
-    console.log('bidResponse', bidResponse);
     return bidResponse;
   }
 
-  console.log('standardUnits - bid', standardUnits, bid);
   let bidResponse = {};
   let width = bid.width || 1;
   let height = bid.height || 1;
@@ -488,7 +478,6 @@ function _buildResponseObject(request, bid) {
       bidResponse.meta.mediaType = 'native';
     }
   }
-  console.log('bidResponse', bidResponse);
   return bidResponse;
 }
 
@@ -496,7 +485,7 @@ function _filterData(obj) {
   let result = {};
 
   for (const key in obj) {
-    if (!utils.isEmpty(obj[key].imp)) {
+    if (!isEmpty(obj[key].imp)) {
       result[key] = obj[key];
     }
   }
