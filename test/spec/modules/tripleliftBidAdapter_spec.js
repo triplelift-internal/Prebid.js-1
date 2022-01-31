@@ -503,6 +503,7 @@ describe('triplelift adapter', function () {
       expect(payload.imp[5].video).to.exist.and.to.be.a('object');
       // banner and outream video and native
       expect(payload.imp[6]).to.not.have.property('video');
+      expect(payload.imp[6]).to.not.have.property('native');
       expect(payload.imp[6]).to.have.property('banner');
       expect(payload.imp[6].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
     });
