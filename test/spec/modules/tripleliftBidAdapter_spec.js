@@ -508,6 +508,14 @@ describe('triplelift adapter', function () {
       expect(payload.imp[6].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
     });
 
+    it('should be a native post request and populate the payload', function () {
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const payload = request[1].data;
+      // native
+      expect(payload.imp[0]).to.have.property('native');
+      expect(payload.imp[0].native).to.exist.and.to.be.a('object');
+    });
+
     it('should add tdid to the payload if included', function () {
       const id = '6bca7f6b-a98a-46c0-be05-6020f7604598';
       bidRequests[0].userId.tdid = id;
