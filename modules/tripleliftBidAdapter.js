@@ -385,12 +385,13 @@ function _isValidSize(size) {
 
 // TODO: Possibly use ternaries to remove some of the excess here
 function _buildResponseObject(request, bid) {
+  let bidResponse = {};
+  let width = bid.width || 1;
+  let height = bid.height || 1;
+  let dealId = bid.deal_id || '';
+  let creativeId = bid.crid || '';
+
   if (bid.native_ad) {
-    let bidResponse = {};
-    let width = bid.width || 1;
-    let height = bid.height || 1;
-    let dealId = bid.deal_id || '';
-    let creativeId = bid.crid || '';
     let body = bid.native_ad.body || '';
     let icon = bid.native_ad.icon || '';
     let image = bid.native_ad.image || '';
@@ -433,11 +434,6 @@ function _buildResponseObject(request, bid) {
     return bidResponse;
   }
 
-  let bidResponse = {};
-  let width = bid.width || 1;
-  let height = bid.height || 1;
-  let dealId = bid.deal_id || '';
-  let creativeId = bid.crid || '';
   let breq = standardUnits[bid.imp_id];
 
   if (bid.cpm != 0 && bid.ad) {
