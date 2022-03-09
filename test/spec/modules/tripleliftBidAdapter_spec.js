@@ -310,7 +310,7 @@ describe('triplelift adapter', function () {
           userId: {},
           schain,
         },
-        // banner and outream video and native
+        // banner and outstream video and native
         {
           bidder: 'triplelift',
           params: {
@@ -513,7 +513,16 @@ describe('triplelift adapter', function () {
       const payload = request[1].data;
       // native
       expect(payload.imp[0]).to.have.property('native');
+      expect(payload.imp[0].tagid).to.equal('native_test');
       expect(payload.imp[0].native).to.exist.and.to.be.a('object');
+      expect(payload.imp[0].native).to.have.property('image');
+      expect(payload.imp[0].native).to.have.property('title');
+      expect(payload.imp[0].native).to.have.property('sponsoredBy');
+      expect(payload.imp[0].native).to.have.property('clickUrl');
+      expect(payload.imp[0].native).to.have.property('privacyLink');
+      expect(payload.imp[0].native).to.have.property('body');
+      expect(payload.imp[0].native).to.have.property('icon');
+      expect(payload.imp[0].sizes).to.deep.equal([{w: 1, h: 1}]);
     });
 
     it('should add tdid to the payload if included', function () {
