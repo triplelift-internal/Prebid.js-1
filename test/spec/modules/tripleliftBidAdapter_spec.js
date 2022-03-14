@@ -534,6 +534,15 @@ describe('triplelift adapter', function () {
       expect(payload.user).to.deep.equal({ext: {eids: [{source: 'adserver.org', uids: [{id, ext: {rtiPartner: 'TDID'}}]}]}});
     });
 
+    it('should add tdid to the native payload if included', function () {
+      const id = '6bca7f6b-a98a-46c0-be05-6020f7604598';
+      bidRequests[0].userId.tdid = id;
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const payload = request[1].data;
+      expect(payload).to.exist;
+      expect(payload.user).to.deep.equal({ext: {eids: [{source: 'adserver.org', uids: [{id, ext: {rtiPartner: 'TDID'}}]}]}});
+    });
+
     it('should add idl_env to the payload if included', function () {
       const id = 'XY6104gr0njcH9UDIR7ysFFJcm2XNpqeJTYslleJ_cMlsFOfZI';
       bidRequests[0].userId.idl_env = id;
