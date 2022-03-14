@@ -171,7 +171,9 @@ function _getORTBVideo(bidRequest) {
     logWarn('Video size not defined', err);
   }
   if (video.context === 'instream') {
-    if (video.placement !== 1 && video.placement !== 5) {
+    if (!video.placement) {
+      video.placement = 1
+    } else if (video.placement !== 1 && video.placement !== 5) {
       logMessage(`video.placement value of ${video.placement} is invalid for instream context. Setting placement to 1`)
       video.placement = 1
     }
