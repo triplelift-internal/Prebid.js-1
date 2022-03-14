@@ -164,9 +164,18 @@ function _isInstreamBidRequest(bidRequest) {
 function _getORTBVideo(bidRequest) {
   // give precedent to mediaTypes.video
   let video = { ...bidRequest.params.video, ...bidRequest.mediaTypes.video };
-  if (!video.w) video.w = video.playerSize[0][0];
-  if (!video.h) video.h = video.playerSize[0][1];
-  if (video.context === 'instream') video.placement = 1;
+  try {
+    if (!video.w) video.w = video.playerSize[0][0];
+    if (!video.h) video.h = video.playerSize[0][1];
+  } catch (err) {
+    logWarn('Video size not defined', err);
+  }
+  if (video.context === 'instream') {
+    if (video.placement !== 1 && video.placement !== 5) {
+      logMessage(`video.placement value of ${video.placement} is invalid. Setting placement to 1`)
+      video.placement = 1
+    }
+  }
   // clean up oRTB object
   delete video.playerSize;
   return video;
