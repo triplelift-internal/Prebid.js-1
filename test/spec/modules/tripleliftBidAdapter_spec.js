@@ -434,7 +434,7 @@ describe('triplelift adapter', function () {
           userId: {},
           schain,
         },
-        // instream video; invalid placement
+        // instream video; undefined placement
         {
           bidder: 'triplelift',
           params: {
@@ -451,8 +451,7 @@ describe('triplelift adapter', function () {
           mediaTypes: {
             video: {
               context: 'instream',
-              playerSize: [640, 480],
-              placement: 6
+              playerSize: [640, 480]
             }
           },
           adUnitCode: 'adunit-code-instream',
@@ -566,7 +565,7 @@ describe('triplelift adapter', function () {
       expect(payload.imp[9]).to.have.property('video');
       expect(payload.imp[9].video).to.exist.and.to.be.a('object');
       expect(payload.imp[9].video.placement).to.equal(1);
-      // instream video; invalid placement
+      // instream video; undefined placement
       expect(payload.imp[10]).to.not.have.property('banner');
       expect(payload.imp[10]).to.have.property('video');
       expect(payload.imp[10].video).to.exist.and.to.be.a('object');
