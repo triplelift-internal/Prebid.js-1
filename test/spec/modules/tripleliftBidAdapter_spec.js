@@ -525,6 +525,212 @@ describe('triplelift adapter', function () {
       expect(payload.imp[0].sizes).to.deep.equal([{w: 1, h: 1}]);
     });
 
+    it('should be an array of length 1 if request is only for banner', function () {
+      const bannerRequest = [
+        {
+          bidder: 'triplelift',
+          params: {
+            inventoryCode: '12345',
+            floor: 1.0,
+          },
+          mediaTypes: {
+            banner: {
+              sizes: [
+                [970, 250],
+                [1, 1]
+              ]
+            }
+          },
+          adUnitCode: 'adunit-code',
+          sizes: [[300, 250], [300, 600], [1, 1, 1], ['flex']],
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475',
+          userId: {},
+          schain,
+          ortb2Imp: {
+            ext: {
+              data: {
+                pbAdSlot: 'homepage-top-rect',
+                adUnitSpecificAttribute: 123
+              }
+            }
+          }
+        }
+      ];
+      const request = tripleliftAdapterSpec.buildRequests(bannerRequest, bidderRequest);
+      expect(request).to.have.length(1);
+    });
+
+    it('should be an array of length 1 if request is only for instream', function () {
+      const instreamRequest = [
+        {
+          bidder: 'triplelift',
+          params: {
+            inventoryCode: 'insteam_test',
+            floor: 1.0,
+            video: {
+              mimes: ['video/mp4'],
+              maxduration: 30,
+              minduration: 6,
+              w: 640,
+              h: 480
+            }
+          },
+          mediaTypes: {
+            video: {
+              context: 'instream',
+              playerSize: [640, 480]
+            }
+          },
+          adUnitCode: 'adunit-code-instream',
+          sizes: [[300, 250], [300, 600], [1, 1, 1], ['flex']],
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475',
+          userId: {},
+          schain,
+        }
+      ];
+      const request = tripleliftAdapterSpec.buildRequests(instreamRequest, bidderRequest);
+      expect(request).to.have.length(1);
+    });
+
+    it('should be an array of length 1 if request is for banner and instream', function () {
+      const bannerVideoRequest = [
+        {
+          bidder: 'triplelift',
+          params: {
+            inventoryCode: '12345',
+            floor: 1.0,
+          },
+          mediaTypes: {
+            banner: {
+              sizes: [
+                [970, 250],
+                [1, 1]
+              ]
+            }
+          },
+          adUnitCode: 'adunit-code',
+          sizes: [[300, 250], [300, 600], [1, 1, 1], ['flex']],
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475',
+          userId: {},
+          schain,
+          ortb2Imp: {
+            ext: {
+              data: {
+                pbAdSlot: 'homepage-top-rect',
+                adUnitSpecificAttribute: 123
+              }
+            }
+          }
+        },
+        {
+          bidder: 'triplelift',
+          params: {
+            inventoryCode: 'insteam_test',
+            floor: 1.0,
+            video: {
+              mimes: ['video/mp4'],
+              maxduration: 30,
+              minduration: 6,
+              w: 640,
+              h: 480
+            }
+          },
+          mediaTypes: {
+            video: {
+              context: 'instream',
+              playerSize: [640, 480]
+            }
+          },
+          adUnitCode: 'adunit-code-instream',
+          sizes: [[300, 250], [300, 600], [1, 1, 1], ['flex']],
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475',
+          userId: {},
+          schain,
+        }
+      ];
+      const request = tripleliftAdapterSpec.buildRequests(bannerVideoRequest, bidderRequest);
+      expect(request).to.have.length(1);
+    });
+
+    it('should be an array of length 1 if request is only for native', function () {
+      const nativeRequest = [
+        {
+          bidder: 'triplelift',
+          params: {
+            inventoryCode: 'native_test',
+            floor: 1.0,
+          },
+          mediaTypes: {
+            native: {
+              sendTargetingKeys: true,
+              image: {
+                required: false
+              },
+              title: {
+                required: false
+              },
+              sponsoredBy: {
+                required: false
+              },
+              clickUrl: {
+                required: false
+              },
+              privacyLink: {
+                required: false
+              },
+              body: {
+                required: false
+              },
+              icon: {
+                required: false
+              }
+            }
+          },
+          nativeParams: {
+            sendTargetingKeys: true,
+            image: {
+              required: false
+            },
+            title: {
+              required: false
+            },
+            sponsoredBy: {
+              required: false
+            },
+            clickUrl: {
+              required: false
+            },
+            privacyLink: {
+              required: false
+            },
+            body: {
+              required: false
+            },
+            icon: {
+              required: false
+            }
+          },
+          adUnitCode: 'adunit-code-native',
+          sizes: [],
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475',
+          userId: {},
+          schain,
+        }
+      ];
+      const request = tripleliftAdapterSpec.buildRequests(nativeRequest, bidderRequest);
+      expect(request).to.have.length(1);
+    });
+
     it('should add tdid to the payload if included', function () {
       const id = '6bca7f6b-a98a-46c0-be05-6020f7604598';
       bidRequests[0].userId.tdid = id;
