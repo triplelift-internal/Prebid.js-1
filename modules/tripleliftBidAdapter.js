@@ -2,6 +2,7 @@ import { tryAppendQueryString, logMessage, logError, isEmpty, isStr, isPlainObje
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 const GVLID = 28;
 const BIDDER_CODE = 'triplelift';
@@ -10,6 +11,7 @@ const BANNER_TIME_TO_LIVE = 300;
 const INSTREAM_TIME_TO_LIVE = 3600;
 let gdprApplies = true;
 let consentString = null;
+const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 
 export const tripleliftAdapterSpec = {
   gvlid: GVLID,
@@ -197,6 +199,8 @@ function _getGlobalFpd() {
   const context = {}
   const user = {};
   const ortbData = config.getConfig('ortb2') || {};
+  const oneplusx = storage.getDataFromLocalStorage('1plusx')
+  console.log('1plusx', JSON.parse(oneplusx))
 
   const fpdContext = Object.assign({}, ortbData.site);
   const fpdUser = Object.assign({}, ortbData.user);
