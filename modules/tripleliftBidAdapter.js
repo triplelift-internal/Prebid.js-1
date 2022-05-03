@@ -1,4 +1,4 @@
-import { tryAppendQueryString, logMessage, logError, isEmpty, isStr, isPlainObject, isArray, logWarn } from '../src/utils.js';
+import { tryAppendQueryString, logMessage, logError, isEmpty, isStr, isPlainObject, isArray, logWarn, mergeDeep, deepSetValue } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -199,11 +199,10 @@ function _getGlobalFpd() {
   const context = {}
   const user = {};
   const ortbData = config.getConfig('ortb2') || {};
-  const oneplusx = storage.getDataFromLocalStorage('1plusx')
-  console.log('1plusx', JSON.parse(oneplusx))
+  const oneplusx = _getSegments();
 
-  const fpdContext = Object.assign({}, ortbData.site);
-  const fpdUser = Object.assign({}, ortbData.user);
+  const fpdContext = mergeDeep({}, ortbData.site);
+  const fpdUser = mergeDeep({}, ortbData.user);
 
   _addEntries(context, fpdContext);
   _addEntries(user, fpdUser);
@@ -214,7 +213,39 @@ function _getGlobalFpd() {
   if (!isEmpty(user)) {
     fpd.user = user;
   }
+  if(!isEmpty(oneplusx)) {
+    const updatedUserData = _setSegments(ortbData, fpd, oneplusx);
+    return updatedUserData;
+  }
+
   return fpd;
+}
+
+function _getSegments() {
+  const name = '1plusx.com'
+  const data = JSON.parse(storage.getDataFromLocalStorage('1plusx')) || {};
+
+  if(Object.keys(data).length !== 0) {
+    const oneplusx = [{
+      name,
+      ext: { "segtax": 501 },
+      segment: [data],
+    }];
+    return oneplusx;
+  } 
+
+  return [data];
+}
+
+function _setSegments(currOrtb, currFpd, oneplusx) {
+  if(currOrtb !== undefined && currOrtb.user !== undefined && currOrtb.user.data !== undefined) {
+    const updatedUserData = [...currOrtb.user.data, ...oneplusx];
+    currFpd.user.data = updatedUserData;
+    return currFpd;
+  } 
+
+  deepSetValue(currOrtb, 'user.data', oneplusx);
+  return currOrtb;
 }
 
 function _getAdUnitFpd(adUnitFpd) {
