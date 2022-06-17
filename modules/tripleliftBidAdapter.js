@@ -128,6 +128,8 @@ function _buildPostBody(bidRequests) {
     return imp;
   });
 
+  utils.deepSetValue(data, 'source.tid', bidRequests[0].transactionId);
+
   let eids = [
     ...getUnifiedIdEids([bidRequests[0]]),
     ...getIdentityLinkEids([bidRequests[0]]),
