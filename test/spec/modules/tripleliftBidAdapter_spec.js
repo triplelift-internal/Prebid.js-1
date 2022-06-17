@@ -432,6 +432,12 @@ describe('triplelift adapter', function () {
       expect(payload.imp[6].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
     });
 
+    it('should include transaction id', function () {
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.source.tid).to.exist;
+      expect(request.data.source.tid).and.to.deep.equal(bidRequests[0].auctionId);
+    });
+
     it('should add tdid to the payload if included', function () {
       const id = '6bca7f6b-a98a-46c0-be05-6020f7604598';
       bidRequests[0].userId.tdid = id;
