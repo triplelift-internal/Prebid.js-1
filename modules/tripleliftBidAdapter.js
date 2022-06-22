@@ -48,6 +48,8 @@ export const tripleliftAdapterSpec = {
       }
     }
 
+    utils.deepSetValue(data, 'source.tid', bidRequests[0].auctionId);
+
     if (bidderRequest && bidderRequest.uspConsent) {
       tlCall = tryAppendQueryString(tlCall, 'us_privacy', bidderRequest.uspConsent);
     }
