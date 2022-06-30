@@ -3,6 +3,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
+import {bidderSettings} from '../src/bidderSettings.js';
 
 const GVLID = 28;
 const BIDDER_CODE = 'triplelift';
@@ -199,7 +200,8 @@ function _getGlobalFpd(bidderRequest) {
   const context = {}
   const user = {};
   const ortbData = bidderRequest.ortb2 || {};
-  const opeCloudStorage = _fetchOpeCloud();
+  const storageAllowed = bidderSettings.get(bidderRequest.bidderCode, 'storageAllowed');
+  const opeCloudStorage = storageAllowed ? _fetchOpeCloud() : null;
 
   const fpdContext = Object.assign({}, ortbData.site);
   const fpdUser = Object.assign({}, ortbData.user);
