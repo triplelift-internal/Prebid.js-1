@@ -1121,7 +1121,7 @@ describe('triplelift adapter', function () {
         }
       }
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, {...bidderRequest, ortb2});
-      const { data: payload } = request;
+      const { data: payload } = request[0];
       expect(payload.ext.fpd.user).to.not.exist;
       expect(payload.ext.fpd.context.ext.data).to.haveOwnProperty('category');
       expect(payload.ext.fpd.context).to.haveOwnProperty('pmp_elig');
@@ -1136,7 +1136,7 @@ describe('triplelift adapter', function () {
     it('should send 1PlusX data as fpd if localStorage is available and no other fpd is defined', function() {
       sandbox.stub(storage, 'getDataFromLocalStorage').callsFake(() => '{"kid":1,"s":"ySRdArquXuBolr/cVv0UNqrJhTO4QZsbNH/t+2kR3gXjbA==","t":"/yVtBrquXuBolr/cVv0UNtx1mssdLYeKFhWFI3Dq1dJnug=="}');
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.ext.fpd).to.deep.equal({
+      expect(request[0].data.ext.fpd).to.deep.equal({
         'user': {
           'data': [
             {
@@ -1161,7 +1161,7 @@ describe('triplelift adapter', function () {
       }
       sandbox.stub(storage, 'getDataFromLocalStorage').callsFake(() => '{"kid":1,"s":"ySRdArquXuBolr/cVv0UNqrJhTO4QZsbNH/t+2kR3gXjbA==","t":"/yVtBrquXuBolr/cVv0UNtx1mssdLYeKFhWFI3Dq1dJnug=="}');
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.ext.fpd).to.deep.equal({
+      expect(request[0].data.ext.fpd).to.deep.equal({
         'user': {
           'data': [
             { 'name': 'dataprovider.com', 'ext': { 'segtax': 4 }, 'segment': [{ 'id': '1' }] },
@@ -1187,7 +1187,7 @@ describe('triplelift adapter', function () {
       }
       sandbox.stub(storage, 'getDataFromLocalStorage').callsFake(() => null);
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.ext.fpd).to.deep.equal({
+      expect(request[0].data.ext.fpd).to.deep.equal({
         'user': {
           'data': [
             { 'name': 'dataprovider.com', 'ext': { 'segtax': 4 }, 'segment': [{ 'id': '1' }] },
