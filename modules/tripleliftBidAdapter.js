@@ -2,6 +2,7 @@ import { tryAppendQueryString, logMessage, isEmpty, isStr, isPlainObject, isArra
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const GVLID = 28;
 const BIDDER_CODE = 'triplelift';
@@ -258,14 +259,27 @@ function _getFloor(bid) {
   return floor !== null ? floor : bid.params.floor;
 }
 
-function _getGlobalFpd() {
+function _getGlobalFpd(bidderRequest) {
   const fpd = {};
   const context = {};
   const user = {};
-  const ortbData = config.getLegacyFpd(config.getConfig('ortb2')) || {};
+  const ortbData = bidderRequest.ortb2 || {};
+  const opeCloudStorage = _fetchOpeCloud();
 
-  const fpdContext = Object.assign({}, ortbData.context);
+  const fpdContext = Object.assign({}, ortbData.site);
   const fpdUser = Object.assign({}, ortbData.user);
+
+  if (opeCloudStorage) {
+    fpdUser.data = fpdUser.data || []
+    try {
+      fpdUser.data.push({
+        name: 'www.1plusx.com',
+        ext: opeCloudStorage
+      })
+    } catch (err) {
+      logError('Triplelift: error adding 1plusX segments: ', err);
+    }
+  }
 
   _addEntries(context, fpdContext);
   _addEntries(user, fpdUser);
@@ -277,6 +291,18 @@ function _getGlobalFpd() {
     fpd.user = user;
   }
   return fpd;
+}
+
+function _fetchOpeCloud() {
+  const opeCloud = storage.getDataFromLocalStorage('opecloud_ctx');
+  if (!opeCloud) return null;
+  try {
+    const parsedJson = JSON.parse(opeCloud);
+    return parsedJson
+  } catch (err) {
+    logError('Triplelift: error parsing JSON: ', err);
+    return null
+  }
 }
 
 function _getAdUnitFpd(adUnitFpd) {
