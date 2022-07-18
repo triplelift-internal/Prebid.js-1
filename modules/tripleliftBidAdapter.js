@@ -21,7 +21,16 @@ export const tripleliftAdapterSpec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   isBidRequestValid: function (bid) {
-    return typeof bid.params.inventoryCode !== 'undefined';
+    if (!bid.mediaTypes.native) {
+      return typeof bid.params.inventoryCode !== 'undefined';
+    }
+    return (
+      typeof bid.params.inventoryCode !== 'undefined' &&
+      !bid.nativeParams.image.required &&
+      bid.nativeParams.clickUrl.required &&
+      bid.nativeParams.sponsoredBy.required &&
+      bid.nativeParams.title.required
+    );
   },
 
   buildRequests: function (bidRequests, bidderRequest) {
