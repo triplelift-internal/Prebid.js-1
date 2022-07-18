@@ -1,4 +1,4 @@
-import { tryAppendQueryString, logMessage, isEmpty, isStr, isPlainObject, isArray, logWarn } from '../src/utils.js';
+import { tryAppendQueryString, logMessage, logError, isEmpty, isStr, isPlainObject, isArray, logWarn } from '../src/utils.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -10,6 +10,7 @@ const STR_ENDPOINT = 'https://tlx.3lift.com/header/auction?';
 const STR_ENDPOINT_NATIVE = 'https://tlx.3lift.com/header_native/auction?';
 let gdprApplies = true;
 let consentString = null;
+export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 // TODO null or []?
 let standardUnits = null;
 let nativeUnits = null;
@@ -38,14 +39,14 @@ export const tripleliftAdapterSpec = {
       standard: STR_ENDPOINT,
       native: STR_ENDPOINT_NATIVE
     };
-    let data = _filterData(_buildPostBody(bidRequests));
+    let data = _filterData(_buildPostBody(bidRequests, bidderRequest));
 
     for (const prop in endpoints) {
       endpoints[prop] = tryAppendQueryString(endpoints[prop], 'lib', 'prebid');
       endpoints[prop] = tryAppendQueryString(endpoints[prop], 'v', '$prebid.version$');
 
       if (bidderRequest && bidderRequest.refererInfo) {
-        let referrer = bidderRequest.refererInfo.referer;
+        let referrer = bidderRequest.refererInfo.page;
         endpoints[prop] = tryAppendQueryString(endpoints[prop], 'referrer', referrer);
       }
 
@@ -101,10 +102,10 @@ export const tripleliftAdapterSpec = {
     });
   },
 
-  interpretResponse: function (serverResponse, request) {
+  interpretResponse: function (serverResponse, {bidderRequest}) {
     let bids = serverResponse.body.bids || [];
     return bids.map(function (bid) {
-      return _buildResponseObject(request, bid);
+      return _buildResponseObject(bidderRequest, bid);
     });
   },
 
@@ -143,14 +144,14 @@ function _getSyncType(syncOptions) {
   if (syncOptions.pixelEnabled) return 'image';
 }
 
-function _buildPostBody(bidRequests) {
+function _buildPostBody(bidRequests, bidderRequest) {
   standardUnits = bidRequests.filter(bid => bid.mediaTypes.banner || bid.mediaTypes.video);
   nativeUnits = bidRequests.filter(bid => bid.mediaTypes.native && !bid.mediaTypes.banner && !bid.mediaTypes.video);
 
   let standard = {};
   let native = {};
   let { schain } = bidRequests[0];
-  let globalFpd = _getGlobalFpd();
+  const globalFpd = _getGlobalFpd(bidderRequest);
 
   // Returns empty array if no units; which will later be filtered out by _filterData
   standard.imp = standardUnits.map((bidRequest, index) => {

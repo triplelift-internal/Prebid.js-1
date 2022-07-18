@@ -1120,14 +1120,8 @@ describe('triplelift adapter', function () {
           sens: sens,
         }
       }
-      sandbox.stub(config, 'getConfig').callsFake(key => {
-        const config = {
-          ortb2
-        };
-        return utils.deepAccess(config, key);
-      });
-      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      const { data: payload } = request[0];
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, {...bidderRequest, ortb2});
+      const { data: payload } = request;
       expect(payload.ext.fpd.user).to.not.exist;
       expect(payload.ext.fpd.context.ext.data).to.haveOwnProperty('category');
       expect(payload.ext.fpd.context).to.haveOwnProperty('pmp_elig');
