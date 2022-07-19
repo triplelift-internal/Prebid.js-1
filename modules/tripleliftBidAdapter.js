@@ -222,8 +222,8 @@ function _getGlobalFpd(bidderRequest) {
   const context = {}
   const user = {};
   const ortbData = bidderRequest.ortb2 || {};
-  const storageAllowed = bidderSettings.get(bidderRequest.bidderCode, 'storageAllowed');
-  const opeCloudStorage = storageAllowed ? _fetchOpeCloud() : null;
+  const tlxSettings = _getBidderSettings();
+  const opeCloudStorage = _fetchOpeCloud();
 
   const fpdContext = Object.assign({}, ortbData.site);
   const fpdUser = Object.assign({}, ortbData.user);
@@ -262,6 +262,10 @@ function _fetchOpeCloud() {
     logError('Triplelift: error parsing JSON: ', err);
     return null
   }
+}
+
+function _getBidderSettings() {
+  return bidderSettings.settingsFor('triplelift');
 }
 
 function _getAdUnitFpd(adUnitFpd) {
