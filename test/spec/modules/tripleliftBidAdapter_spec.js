@@ -603,6 +603,7 @@ describe('triplelift adapter', function () {
     it('should be able find video object from the instream request', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.imp[1].video).to.exist.and.to.be.a('object');
+      expect(request.data.imp[5].video).to.exist.and.to.be.a('object');
     });
 
     it('should only parse sizes that are of the proper length and format', function () {
@@ -644,6 +645,7 @@ describe('triplelift adapter', function () {
       // banner and outream video and native
       expect(payload.imp[6]).to.have.property('video');
       expect(payload.imp[6]).to.have.property('banner');
+      expect(payload.imp[6]).to.not.have.property('native');
       expect(payload.imp[6].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
       expect(payload.imp[6].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'w': 640, 'h': 480, 'context': 'outstream', 'placement': 3});
       // outstream video only
