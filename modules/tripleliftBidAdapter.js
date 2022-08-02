@@ -48,8 +48,6 @@ export const tripleliftAdapterSpec = {
       }
     }
 
-    utils.deepSetValue(data, 'source.tid', bidRequests[0].auctionId);
-
     if (bidderRequest && bidderRequest.uspConsent) {
       tlCall = tryAppendQueryString(tlCall, 'us_privacy', bidderRequest.uspConsent);
     }
@@ -130,6 +128,9 @@ function _buildPostBody(bidRequests, bidderRequest) {
     };
     if (!isEmpty(bidRequest.ortb2Imp)) {
       imp.fpd = _getAdUnitFpd(bidRequest.ortb2Imp);
+    }
+    if (!isEmpty(bidRequest.transactionId)) {
+      imp.ext = { tid: bidRequest.transactionId };
     }
     return imp;
   });
