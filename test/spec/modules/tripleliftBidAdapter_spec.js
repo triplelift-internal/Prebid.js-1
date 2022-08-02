@@ -139,6 +139,7 @@ describe('triplelift adapter', function () {
           sizes: [[300, 250], [300, 600], [1, 1, 1], ['flex']],
           bidId: '30b31c1838de1e',
           bidderRequestId: '22edbae2733bf6',
+          transactionId: '0650930e-ac2e-4b33-a544-47638c35e84d',
           auctionId: '1d1a030790a475',
           userId: {},
           schain,
@@ -174,6 +175,7 @@ describe('triplelift adapter', function () {
           sizes: [[300, 250], [300, 600], [1, 1, 1], ['flex']],
           bidId: '30b31c1838de1e',
           bidderRequestId: '22edbae2733bf6',
+          transactionId: '0650930e-ac2e-4b33-a544-47638c35e84d',
           auctionId: '1d1a030790a475',
           userId: {},
           schain,
@@ -415,9 +417,11 @@ describe('triplelift adapter', function () {
       expect(payload.imp[0].tagid).to.equal('12345');
       expect(payload.imp[0].floor).to.equal(1.0);
       expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
+      expect(payload.imp[0].ext).to.have.property('tid');
       expect(payload.imp[1].tagid).to.equal('insteam_test');
       expect(payload.imp[1].floor).to.equal(1.0);
       expect(payload.imp[1].video).to.exist.and.to.be.a('object');
+      expect(payload.imp[1].ext).to.have.property('tid');
       // banner and outstream video
       expect(payload.imp[2]).to.not.have.property('video');
       expect(payload.imp[2]).to.have.property('banner');
@@ -438,12 +442,7 @@ describe('triplelift adapter', function () {
       expect(payload.imp[6]).to.not.have.property('video');
       expect(payload.imp[6]).to.have.property('banner');
       expect(payload.imp[6].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
-    });
-
-    it('should include transaction id', function () {
-      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.source.tid).to.exist;
-      expect(request.data.source.tid).and.to.deep.equal(bidRequests[0].auctionId);
+      // expect(payload.imp[6].ext).to.have.property('tid');
     });
 
     it('should add tdid to the payload if included', function () {
