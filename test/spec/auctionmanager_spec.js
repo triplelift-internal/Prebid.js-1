@@ -18,10 +18,9 @@ import {find} from 'src/polyfill.js';
 import { server } from 'test/mocks/xhr.js';
 import {hook} from '../../src/hook.js';
 import {auctionManager} from '../../src/auctionManager.js';
-import 'src/debugging.js' // some tests look for debugging side effects
+import 'modules/debugging/index.js' // some tests look for debugging side effects
 import {AuctionIndex} from '../../src/auctionIndex.js';
 import {expect} from 'chai';
-import {synchronizePromise} from '../helpers/syncPromise.js';
 
 var assert = require('assert');
 
@@ -134,7 +133,7 @@ function mockAjaxBuilder() {
 }
 
 describe('auctionmanager.js', function () {
-  let indexAuctions, indexStub, promiseSandbox;
+  let indexAuctions, indexStub
 
   before(() => {
     // hooks are global and their side effects depend on what has been loaded
@@ -150,13 +149,10 @@ describe('auctionmanager.js', function () {
     indexAuctions = [];
     indexStub = sinon.stub(auctionManager, 'index');
     indexStub.get(() => new AuctionIndex(() => indexAuctions));
-    promiseSandbox = sinon.createSandbox();
-    synchronizePromise(promiseSandbox);
   });
 
   afterEach(() => {
     indexStub.restore();
-    promiseSandbox.restore();
   });
 
   describe('getKeyValueTargetingPairs', function () {
@@ -1458,7 +1454,6 @@ describe('auctionmanager.js', function () {
       }
 
       beforeEach(() => {
-        promiseSandbox.restore();
         bids = [
           mockBid({bidderCode: BIDDER_CODE1}),
           mockBid({bidderCode: BIDDER_CODE})
