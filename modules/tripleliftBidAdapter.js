@@ -11,7 +11,6 @@ const STR_ENDPOINT_NATIVE = 'https://tlx.3lift.com/header_native/auction?';
 let gdprApplies = true;
 let consentString = null;
 export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
-// TODO null or []?
 let standardUnits = null;
 let nativeUnits = null;
 const BANNER_TIME_TO_LIVE = 300;
@@ -170,7 +169,6 @@ function _buildPostBody(bidRequests, bidderRequest) {
       tagid: bidRequest.params.inventoryCode,
       floor: _getFloor(bidRequest),
       native: bidRequest.nativeParams,
-      // TODO: Where should sizes come from? Can this always be [1, 1]? TLX requies sizes to be located here in request
       sizes: _sizes([[1, 1]])
     };
 
@@ -410,7 +408,6 @@ function _isValidSize(size) {
   return size.length === 2 && typeof size[0] === 'number' && typeof size[1] === 'number';
 }
 
-// TODO: Possibly use ternaries to remove some of the excess here
 function _buildResponseObject(request, bid) {
   let bidResponse = {};
   let width = bid.width || 1;
@@ -425,7 +422,6 @@ function _buildResponseObject(request, bid) {
     let cta = bid.native_ad.cta || '';
     let adChoices = bid.native_ad.adChoices || '';
 
-    // TODO: What is this and is it necessary?
     if (bid.native_ad.image.sizes) {
       bid.native_ad.image.sizes = _sizes(bid.native_ad.image.sizes);
     }
