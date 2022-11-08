@@ -136,8 +136,8 @@ function _getSyncType(syncOptions) {
 }
 
 function _buildPostBody(bidRequests, bidderRequest) {
-  let standardUnits = bidRequests.filter(bid => bid.mediaTypes.banner || bid.mediaTypes.video);
-  let nativeUnits = bidRequests.filter(bid => bid.mediaTypes.native && !bid.mediaTypes.banner && !bid.mediaTypes.video);
+  let standardUnits = mapAdUnits('standard', bidRequests);
+  let nativeUnits = mapAdUnits('native', bidRequests);
 
   let standard = {};
   let native = {};
@@ -513,6 +513,14 @@ function _filterData(obj) {
   }
 
   return result;
+}
+
+function mapAdUnits(type, bidRequests) {
+  if (type == 'standard') {
+    return bidRequests.filter(bid => bid.mediaTypes.banner || bid.mediaTypes.video);
+  } else {
+    return bidRequests.filter(bid => bid.mediaTypes.native && !bid.mediaTypes.banner && !bid.mediaTypes.video);
+  }
 }
 
 registerBidder(tripleliftAdapterSpec);
