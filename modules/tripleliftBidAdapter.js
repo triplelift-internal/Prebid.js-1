@@ -11,8 +11,6 @@ const STR_ENDPOINT_NATIVE = 'https://tlx.3lift.com/header_native/auction?';
 let gdprApplies = true;
 let consentString = null;
 export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
-let standardUnits = null;
-let nativeUnits = null;
 const BANNER_TIME_TO_LIVE = 300;
 const INSTREAM_TIME_TO_LIVE = 3600;
 
@@ -94,8 +92,10 @@ export const tripleliftAdapterSpec = {
 
   interpretResponse: function (serverResponse, {bidderRequest}) {
     let bids = serverResponse.body.bids || [];
+    let { standardUnits, nativeUnits } = _splitAdUnits(bidderRequest.bids);
+
     return bids.map(function (bid) {
-      return _buildResponseObject(bidderRequest, bid);
+      return _buildResponseObject(bid, standardUnits, nativeUnits);
     });
   },
 
@@ -134,10 +134,25 @@ function _getSyncType(syncOptions) {
   if (syncOptions.pixelEnabled) return 'image';
 }
 
-function _buildPostBody(bidRequests, bidderRequest) {
-  standardUnits = bidRequests.filter(bid => bid.mediaTypes.banner || bid.mediaTypes.video);
-  nativeUnits = bidRequests.filter(bid => bid.mediaTypes.native && !bid.mediaTypes.banner && !bid.mediaTypes.video);
+function _splitAdUnits(bidRequests) {
+  let standardUnits = []
+  let nativeUnits = []
+  bidRequests.forEach(bid => {
+    if (bid.mediaTypes.banner || bid.mediaTypes.video) {
+      standardUnits.push(bid)
+    } else if (bid.mediaTypes.native && !bid.mediaTypes.banner && !bid.mediaTypes.video) {
+      nativeUnits.push(bid)
+    }
+  })
 
+  return {
+    standardUnits,
+    nativeUnits
+  }
+}
+
+function _buildPostBody(bidRequests, bidderRequest) {
+  let { standardUnits, nativeUnits } = _splitAdUnits(bidRequests);
   let standard = {};
   let native = {};
   let { schain } = bidRequests[0];
@@ -408,7 +423,7 @@ function _isValidSize(size) {
   return size.length === 2 && typeof size[0] === 'number' && typeof size[1] === 'number';
 }
 
-function _buildResponseObject(request, bid) {
+function _buildResponseObject(bid, standardUnits, nativeUnits) {
   let bidResponse = {};
   let width = bid.width || 1;
   let height = bid.height || 1;
@@ -416,18 +431,20 @@ function _buildResponseObject(request, bid) {
   let creativeId = bid.crid || '';
 
   if (bid.native_ad) {
+    let breqNative = nativeUnits[bid.imp_id]
+
     let body = bid.native_ad.body || '';
     let icon = bid.native_ad.icon || '';
     let image = bid.native_ad.image || '';
     let cta = bid.native_ad.cta || '';
     let adChoices = bid.native_ad.adChoices || '';
 
-    if (bid.native_ad.image.sizes) {
+    if (bid.native_ad.image?.sizes) {
       bid.native_ad.image.sizes = _sizes(bid.native_ad.image.sizes);
     }
     if (bid.cpm != 0) {
       bidResponse = {
-        requestId: nativeUnits[bid.imp_id].bidId,
+        requestId: breqNative.bidId,
         cpm: bid.cpm,
         width: width,
         height: height,
@@ -457,11 +474,11 @@ function _buildResponseObject(request, bid) {
     return bidResponse;
   }
 
-  let breq = standardUnits[bid.imp_id];
+  let breqStandard = standardUnits[bid.imp_id];
 
   if (bid.cpm != 0 && bid.ad) {
     bidResponse = {
-      requestId: breq.bidId,
+      requestId: breqStandard.bidId,
       cpm: bid.cpm,
       width: width,
       height: height,
@@ -475,7 +492,7 @@ function _buildResponseObject(request, bid) {
       meta: {}
     };
 
-    if (_isInstreamBidRequest(breq)) {
+    if (_isInstreamBidRequest(breqStandard)) {
       bidResponse.vastXml = bid.ad;
       bidResponse.mediaType = 'video';
       bidResponse.ttl = INSTREAM_TIME_TO_LIVE;
