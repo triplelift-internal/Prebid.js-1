@@ -92,8 +92,7 @@ export const tripleliftAdapterSpec = {
 
   interpretResponse: function (serverResponse, {bidderRequest}) {
     let bids = serverResponse.body.bids || [];
-    let nativeUnits = bidderRequest.bids.filter(bid => bid.mediaTypes.native && !bid.mediaTypes.banner && !bid.mediaTypes.video);
-    let standardUnits = bidderRequest.bids.filter(bid => bid.mediaTypes.banner || bid.mediaTypes.video);
+    let { standardUnits, nativeUnits } = _splitAdUnits(bidderRequest.bids);
 
     return bids.map(function (bid) {
       return _buildResponseObject(bid, standardUnits, nativeUnits);
@@ -135,10 +134,25 @@ function _getSyncType(syncOptions) {
   if (syncOptions.pixelEnabled) return 'image';
 }
 
-function _buildPostBody(bidRequests, bidderRequest) {
-  let standardUnits = mapAdUnits('standard', bidRequests);
-  let nativeUnits = mapAdUnits('native', bidRequests);
+function _splitAdUnits(bidRequests) {
+  let standardUnits = []
+  let nativeUnits = []
+  bidRequests.forEach(bid => {
+    if (bid.mediaTypes.banner || bid.mediaTypes.video) {
+      standardUnits.push(bid)
+    } else if (bid.mediaTypes.native && !bid.mediaTypes.banner && !bid.mediaTypes.video) {
+      nativeUnits.push(bid)
+    }
+  })
 
+  return {
+    standardUnits,
+    nativeUnits
+  }
+}
+
+function _buildPostBody(bidRequests, bidderRequest) {
+  let { standardUnits, nativeUnits } = _splitAdUnits(bidRequests);
   let standard = {};
   let native = {};
   let { schain } = bidRequests[0];
@@ -425,7 +439,7 @@ function _buildResponseObject(bid, standardUnits, nativeUnits) {
     let cta = bid.native_ad.cta || '';
     let adChoices = bid.native_ad.adChoices || '';
 
-    if (bid.native_ad.image.sizes) {
+    if (bid.native_ad.image?.sizes) {
       bid.native_ad.image.sizes = _sizes(bid.native_ad.image.sizes);
     }
     if (bid.cpm != 0) {
@@ -513,14 +527,6 @@ function _filterData(obj) {
   }
 
   return result;
-}
-
-function mapAdUnits(type, bidRequests) {
-  if (type == 'standard') {
-    return bidRequests.filter(bid => bid.mediaTypes.banner || bid.mediaTypes.video);
-  } else {
-    return bidRequests.filter(bid => bid.mediaTypes.native && !bid.mediaTypes.banner && !bid.mediaTypes.video);
-  }
 }
 
 registerBidder(tripleliftAdapterSpec);
