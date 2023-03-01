@@ -167,7 +167,8 @@ describe('triplelift adapter', function () {
           mediaTypes: {
             video: {
               context: 'instream',
-              playerSize: [640, 480]
+              playerSize: [640, 480],
+              playbackmethod: 5
             }
           },
           adUnitCode: 'adunit-code-instream',
@@ -1180,6 +1181,11 @@ describe('triplelift adapter', function () {
         'gpp': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
         'gpp_sid': [7]
       })
+    });
+    it('should cast playbackmethod as an array if it exists', function() {
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.imp[1].video.playbackmethod).to.be.a('array');
+      expect(request.data.imp[1].video.playbackmethod).to.deep.equal([5]);
     });
   });
 

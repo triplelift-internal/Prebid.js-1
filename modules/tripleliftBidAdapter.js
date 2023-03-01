@@ -195,6 +195,9 @@ function _getORTBVideo(bidRequest) {
       video.placement = 3
     }
   }
+  if (video.playbackmethod && Number.isInteger(video.playbackmethod)) {
+    video.playbackmethod = String(video.playbackmethod).split('').map(Number);
+  }
 
   // clean up oRTB object
   delete video.playerSize;
