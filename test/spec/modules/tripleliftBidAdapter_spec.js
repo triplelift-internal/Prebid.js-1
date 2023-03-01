@@ -293,7 +293,8 @@ describe('triplelift adapter', function () {
           mediaTypes: {
             video: {
               context: 'instream',
-              playerSize: [640, 480]
+              playerSize: [640, 480],
+              playbackmethod: [1, 2, 3]
             },
             banner: {
               sizes: [
@@ -1186,6 +1187,8 @@ describe('triplelift adapter', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.imp[1].video.playbackmethod).to.be.a('array');
       expect(request.data.imp[1].video.playbackmethod).to.deep.equal([5]);
+      expect(request.data.imp[5].video.playbackmethod).to.be.a('array');
+      expect(request.data.imp[5].video.playbackmethod).to.deep.equal([1, 2, 3]);
     });
   });
 
