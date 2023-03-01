@@ -1183,10 +1183,13 @@ describe('triplelift adapter', function () {
         'gpp_sid': [7]
       })
     });
-    it('should cast playbackmethod as an array if it exists', function() {
+    it('should cast playbackmethod as an array if it is an integer and it exists', function() {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.imp[1].video.playbackmethod).to.be.a('array');
       expect(request.data.imp[1].video.playbackmethod).to.deep.equal([5]);
+    });
+    it('should set playbackmethod as an array if it exists as an array', function() {
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.imp[5].video.playbackmethod).to.be.a('array');
       expect(request.data.imp[5].video.playbackmethod).to.deep.equal([1, 2, 3]);
     });

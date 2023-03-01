@@ -196,7 +196,7 @@ function _getORTBVideo(bidRequest) {
     }
   }
   if (video.playbackmethod && Number.isInteger(video.playbackmethod)) {
-    video.playbackmethod = String(video.playbackmethod).split('').map(Number);
+    video.playbackmethod = Array.from(String(video.playbackmethod), Number);
   }
 
   // clean up oRTB object
