@@ -111,6 +111,7 @@ function _getSyncType(syncOptions) {
 
 function _buildPostBody(bidRequests, bidderRequest) {
   let data = {};
+  let impExt = {};
   let { schain } = bidRequests[0];
   const globalFpd = _getGlobalFpd(bidderRequest);
 
@@ -131,7 +132,11 @@ function _buildPostBody(bidRequests, bidderRequest) {
 
     if (!isEmpty(bidRequest.ortb2Imp)) {
       imp.fpd = _getAdUnitFpd(bidRequest.ortb2Imp);
-      imp.ext = _getImpExt(bidRequest.ortb2Imp);
+      impExt = _getImpExt(bidRequest.ortb2Imp);
+    }
+
+    if (typeof impExt !== 'undefined') {
+      imp.ext = impExt;
     }
 
     return imp;
