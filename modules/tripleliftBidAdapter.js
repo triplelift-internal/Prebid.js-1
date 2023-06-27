@@ -186,6 +186,10 @@ function _buildPostBody(bidRequests, bidderRequest) {
     data.ext = ext;
   }
 
+  if (bidderRequest?.ortb2) {
+    data.ext.ortb2 = Object.assign({}, bidderRequest.ortb2);
+  }
+
   if (bidderRequest?.ortb2?.regs?.gpp) {
     data.regs = Object.assign({}, bidderRequest.ortb2.regs);
   }
