@@ -85,12 +85,27 @@ export const tripleliftAdapterSpec = {
     bids = bids.map(bid => _buildResponseObject(bidderRequest, bid));
 
     if (paapi.length > 0) {
-      const fledgeAuctionConfigs = paapi.map(config => {
-        return {
-          bidId: bidderRequest.bids[config.imp_id].bidId,
-          config: config.auctionConfig
-        };
+      const combinedConfigs = {};
+
+      paapi.forEach(config => {
+        const impId = config.imp_id;
+
+        if (!combinedConfigs[impId]) {
+          // If impId not in combinedConfigs, initialize it with the current auctionConfig
+          combinedConfigs[impId] = {
+            bidId: bidderRequest.bids[config.imp_id].bidId,
+            config: { ...config.auctionConfig }
+          };
+        } else {
+          // If impId already exists, merge the current auctionConfig with the existing one
+          combinedConfigs[impId].config = mergeConfigs(
+            combinedConfigs[impId].config,
+            config.auctionConfig
+          );
+        }
       });
+
+      const fledgeAuctionConfigs = Object.values(combinedConfigs);
 
       logMessage('Response with FLEDGE:', { bids, fledgeAuctionConfigs });
       return {
@@ -137,6 +152,26 @@ export const tripleliftAdapterSpec = {
     }];
   }
 };
+
+// Helper function to merge two auctionConfigs
+function mergeConfigs(existingConfig, newConfig) {
+  const mergedConfig = { ...existingConfig };
+
+  for (const key in newConfig) {
+    if (newConfig.hasOwnProperty(key)) {
+      // Merge arrays and objects, if applicable, otherwise, overwrite
+      if (Array.isArray(newConfig[key]) && Array.isArray(existingConfig[key])) {
+        mergedConfig[key] = Array.from(new Set([...existingConfig[key], ...newConfig[key]]));
+      } else if (typeof newConfig[key] === 'object' && typeof existingConfig[key] === 'object') {
+        mergedConfig[key] = { ...existingConfig[key], ...newConfig[key] };
+      } else {
+        mergedConfig[key] = newConfig[key];
+      }
+    }
+  }
+
+  return mergedConfig;
+}
 
 function _getSyncType(syncOptions) {
   if (!syncOptions) return;
