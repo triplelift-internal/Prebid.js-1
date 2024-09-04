@@ -1,6 +1,15 @@
-import {createIframe, deepAccess, inIframe, insertElement, logError, logWarn, replaceMacros} from './utils.js';
+import {
+  createIframe,
+  createInvisibleIframe,
+  deepAccess,
+  inIframe,
+  insertElement,
+  logError,
+  logWarn,
+  replaceMacros
+} from './utils.js';
 import * as events from './events.js';
-import { AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS, MESSAGES } from './constants.js';
+import {AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS, MESSAGES, PB_LOCATOR} from './constants.js';
 import {config} from './config.js';
 import {executeRenderer, isRendererRequired} from './Renderer.js';
 import {VIDEO} from './mediaTypes.js';
@@ -9,6 +18,7 @@ import {getCreativeRenderer} from './creativeRenderers.js';
 import {hook} from './hook.js';
 import {fireNativeTrackers} from './native.js';
 import {GreedyPromise} from './utils/promise.js';
+import adapterManager from './adapterManager.js';
 
 const { AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON } = EVENTS;
 const { EXCEPTION } = AD_RENDER_FAILED_REASON;
@@ -58,6 +68,8 @@ export function emitAdRenderSucceeded({ doc, bid, id }) {
   const data = { doc };
   if (bid) data.bid = bid;
   if (id) data.adId = id;
+
+  adapterManager.callAdRenderSucceededBidder(bid.adapterCode || bid.bidder, bid);
 
   events.emit(AD_RENDER_SUCCEEDED, data);
 }
@@ -233,5 +245,23 @@ export function renderAdDirect(doc, adId, options) {
     }
   } catch (e) {
     fail(EXCEPTION, e.message);
+  }
+}
+
+/**
+ * Insert an invisible, named iframe that can be used by creatives to locate the window Prebid is running in
+ * (by looking for one that has `.frames[PB_LOCATOR]` defined).
+ * This is necessary because in some situations creatives may be rendered inside nested iframes - Prebid is not necessarily
+ * in the immediate parent window.
+ */
+export function insertLocatorFrame() {
+  if (!window.frames[PB_LOCATOR]) {
+    if (!document.body) {
+      window.requestAnimationFrame(insertLocatorFrame);
+    } else {
+      const frame = createInvisibleIframe();
+      frame.name = PB_LOCATOR;
+      document.body.appendChild(frame);
+    }
   }
 }

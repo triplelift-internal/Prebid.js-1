@@ -26,7 +26,7 @@ import {enrichFPD} from '../../../src/fpd/enrichment.js';
 import {mockFpdEnrichments} from '../../helpers/fpd.js';
 import {generateUUID} from '../../../src/utils.js';
 import {getCreativeRenderer} from '../../../src/creativeRenderers.js';
-import { BID_STATUS, EVENTS, GRANULARITY_OPTIONS, TARGETING_KEYS } from 'src/constants.js';
+import {BID_STATUS, EVENTS, GRANULARITY_OPTIONS, PB_LOCATOR, TARGETING_KEYS} from 'src/constants.js';
 import {getBidToRender} from '../../../src/adRendering.js';
 
 var assert = require('chai').assert;
@@ -235,6 +235,11 @@ describe('Unit: Prebid Module', function () {
     filters.isActualBid.restore();
     getBidToRender.getHooks({hook: getBidToRenderHook}).remove();
   });
+
+  it('should insert a locator frame on the page', () => {
+    $$PREBID_GLOBAL$$.processQueue();
+    expect(window.frames[PB_LOCATOR]).to.exist;
+  })
 
   describe('and global adUnits', () => {
     const startingAdUnits = [
@@ -1838,7 +1843,24 @@ describe('Unit: Prebid Module', function () {
           adUnitCodes: 'two'
         });
         sinon.assert.calledWith(startAuctionStub, sinon.match({
-          adUnits: [{code: 'two'}]
+          adUnits: [{code: 'two'}],
+          adUnitCodes: ['two']
+        }));
+      });
+
+      it('does not repeat ad unit codes on twin ad units', () => {
+        $$PREBID_GLOBAL$$.requestBids({
+          adUnits: [{code: 'au1'}, {code: 'au2'}, {code: 'au1'}, {code: 'au2'}],
+        });
+        sinon.assert.calledWith(startAuctionStub, sinon.match({
+          adUnitCodes: ['au1', 'au2']
+        }));
+      });
+
+      it('filters out repeated ad unit codes from input', () => {
+        $$PREBID_GLOBAL$$.requestBids({adUnitCodes: ['au1', 'au1', 'au2']});
+        sinon.assert.calledWith(startAuctionStub, sinon.match({
+          adUnitCodes: ['au1', 'au2']
         }));
       });
 
@@ -1894,7 +1916,7 @@ describe('Unit: Prebid Module', function () {
     });
 
     it('passes ortb2 fragments to createAuction', () => {
-      const ortb2Fragments = {};
+      const ortb2Fragments = {global: {}, bidder: {}};
       pbjsModule.startAuction({
         adUnits: [{
           code: 'au',
@@ -3750,6 +3772,17 @@ describe('Unit: Prebid Module', function () {
       sinon.assert.calledOnce(auctionManager.getBidsReceived);
       sinon.assert.notCalled(adapterManager.callBidWonBidder);
       sinon.assert.calledOnce(adapterManager.callBidBillableBidder);
+    });
+  });
+
+  describe('clearAllAuctions', () => {
+    after(() => {
+      resetAuction();
+    });
+    it('clears auction data', function () {
+      expect(auctionManager.getBidsReceived().length).to.not.equal(0);
+      $$PREBID_GLOBAL$$.clearAllAuctions();
+      expect(auctionManager.getBidsReceived().length).to.equal(0);
     });
   });
 });
